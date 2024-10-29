@@ -1,0 +1,7 @@
+# secrets
+certs/*
+*/*.env
+
+# runtime data
+paperless/consume/**/*
+paperless/export/**/*

@@ -1,0 +1,18 @@
+tls:
+  certificates:
+    - certFile: /d-f.dev.cert
+      keyFile: /d-f.dev.key
+
+http:
+  routers:
+    paperless-router:
+      rule: "Host(`paperless.d-f.dev`)"
+      tls: true
+      service: paperless-service
+      entrypoints:
+        - websecure
+  services:
+    paperless-service:
+      loadBalancer:
+        servers:
+          - url: http://paperless:8000
