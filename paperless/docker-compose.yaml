@@ -4,6 +4,8 @@ services:
     restart: unless-stopped
     volumes:
       - redisdata:/data
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   db:
     image: docker.io/library/postgres:16
@@ -14,6 +16,8 @@ services:
       POSTGRES_DB: paperless
       POSTGRES_USER: paperless
       POSTGRES_PASSWORD: paperless
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   paperless:
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
@@ -37,11 +41,12 @@ services:
       PAPERLESS_TIKA_ENABLED: 1
       PAPERLESS_TIKA_GOTENBERG_ENDPOINT: http://gotenberg:3000
       PAPERLESS_TIKA_ENDPOINT: http://tika:9998
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   gotenberg:
     image: docker.io/gotenberg/gotenberg:8.7
     restart: unless-stopped
-
     # The gotenberg chromium route is used to convert .eml files. We do not
     # want to allow external content like tracking pixels or even javascript.
     command:
