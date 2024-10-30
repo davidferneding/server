@@ -5,3 +5,4 @@ certs/*
 # runtime data
 paperless/consume/**/*
 paperless/export/**/*
+paperless/backups/**/*
