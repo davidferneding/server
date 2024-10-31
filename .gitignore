@@ -1,6 +1,6 @@
 # secrets
-certs/*
 */*.env
+*/*.pem
 
 # runtime data
 paperless/consume/**/*
