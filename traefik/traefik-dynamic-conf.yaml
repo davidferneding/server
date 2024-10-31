@@ -17,6 +17,12 @@ http:
       service: vaultwarden-service
       entrypoints:
         - websecure
+    mealie-router:
+      rule: "Host(`food.d-f.dev`)"
+      tls: true
+      service: mealie-service
+      entrypoints:
+        - websecure
   services:
     paperless-service:
       loadBalancer:
@@ -26,3 +32,7 @@ http:
       loadBalancer:
         servers:
           - url: http://vaultwarden:80
+    mealie-service:
+      loadBalancer:
+        servers:
+          - url: http://mealie:9000

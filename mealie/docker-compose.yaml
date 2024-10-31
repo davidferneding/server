@@ -1,0 +1,41 @@
+services:
+  mealie:
+    image: ghcr.io/mealie-recipes/mealie:latest
+    container_name: mealie
+    restart: unless-stopped
+    ports:
+        - "9000:9000"
+    volumes:
+      - ../data/mealie/data:/app/data/
+    environment:
+      # Set Backend ENV Variables Here
+      ALLOW_SIGNUP: "true"
+      PUID: 1000
+      PGID: 1000
+      TZ: Europe/Berlin
+      MAX_WORKERS: 1
+      WEB_CONCURRENCY: 1
+      BASE_URL: https://food.d-f.dev
+      # Database Settings
+      DB_ENGINE: postgres
+      POSTGRES_USER: mealie
+      POSTGRES_PASSWORD: mealie
+      POSTGRES_SERVER: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: mealie
+    depends_on:
+      - postgres
+    labels:
+      - docker-volume-backup.stop-during-backup=true
+
+  postgres:
+    container_name: postgres
+    image: docker.io/library/postgres:16
+    restart: unless-stopped
+    volumes:
+      - ../data/mealie/database:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: mealie
+      POSTGRES_USER: mealie
+    labels:
+      - docker-volume-backup.stop-during-backup=true

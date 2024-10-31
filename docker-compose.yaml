@@ -8,3 +8,4 @@ include:
   # services
   - paperless/docker-compose.yaml
   - vaultwarden/docker-compose.yaml
+  - mealie/docker-compose.yaml
