@@ -1,0 +1,11 @@
+  backup:
+    image: offen/docker-volume-backup:latest
+    restart: always
+    env_file: backup.env
+    volumes:
+      - data:/backup/paperless-data:ro
+      - media:/backup/paperless-media:ro
+      - pgdata:/backup/postgres:ro
+      - redisdata:/backup/redis:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./backups:/archive

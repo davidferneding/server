@@ -1,3 +1,4 @@
 include:
   - traefik/docker-compose.yaml
   - paperless/docker-compose.yaml
+  - backup/docker-compose.yaml
