@@ -23,6 +23,27 @@ http:
       service: mealie-service
       entrypoints:
         - websecure
+    uptime-router:
+      rule: "Host(`uptime.d-f.dev`) || (Host(`status.d-f.dev`) && !Path(`/`))"
+      tls: true
+      service: uptime-service
+      entrypoints:
+        - websecure
+    status-router:
+      rule: "Host(`status.d-f.dev`) && Path(`/`)"
+      tls: true
+      service: uptime-service
+      middlewares: 
+        - status-middleware
+      entrypoints:
+        - websecure
+
+  middlewares:
+    status-middleware:
+      redirectRegex:
+        regex: ".*"
+        replacement: "https://status.d-f.dev/status/"
+
   services:
     paperless-service:
       loadBalancer:
@@ -36,3 +57,7 @@ http:
       loadBalancer:
         servers:
           - url: http://mealie:9000
+    uptime-service:
+      loadBalancer:
+        servers:
+          - url: http://uptime-kuma:3001

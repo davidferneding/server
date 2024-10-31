@@ -9,3 +9,4 @@ include:
   - paperless/docker-compose.yaml
   - vaultwarden/docker-compose.yaml
   - mealie/docker-compose.yaml
+  - uptime-kuma/docker-compose.yaml
