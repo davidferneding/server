@@ -5,4 +5,5 @@
 # runtime data
 paperless/consume/**/*
 paperless/export/**/*
-paperless/backups/**/*
+data/**/*
+backup/backups/**/*
