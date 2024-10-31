@@ -11,8 +11,18 @@ http:
       service: paperless-service
       entrypoints:
         - websecure
+    vaultwarden-router:
+      rule: "Host(`pw.d-f.dev`)"
+      tls: true
+      service: vaultwarden-service
+      entrypoints:
+        - websecure
   services:
     paperless-service:
       loadBalancer:
         servers:
           - url: http://paperless:8000
+    vaultwarden-service:
+      loadBalancer:
+        servers:
+          - url: http://vaultwarden:80

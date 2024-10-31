@@ -1,4 +1,10 @@
 include:
+  # reverse proxy
   - traefik/docker-compose.yaml
-  - paperless/docker-compose.yaml
+
+  # backups
   - backup/docker-compose.yaml
+
+  # services
+  - paperless/docker-compose.yaml
+  - vaultwarden/docker-compose.yaml
