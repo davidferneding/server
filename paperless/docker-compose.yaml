@@ -4,14 +4,12 @@ services:
     restart: unless-stopped
     volumes:
       - redisdata:/data
-    labels:
-      - docker-volume-backup.stop-during-backup=true
 
   db:
     image: docker.io/library/postgres:16
     restart: unless-stopped
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ../data/paperless/database:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: paperless
       POSTGRES_USER: paperless
@@ -30,8 +28,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - data:/usr/src/paperless/data
-      - media:/usr/src/paperless/media
+      - ../data/paperless/data:/usr/src/paperless/data
+      - ../data/paperless/media:/usr/src/paperless/media
       - ./export:/usr/src/paperless/export
       - ./consume:/usr/src/paperless/consume
     env_file: docker-compose.env
@@ -59,7 +57,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  data:
-  media:
-  pgdata:
   redisdata:
