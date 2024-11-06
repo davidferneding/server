@@ -1,7 +1,4 @@
 include:
-  # reverse proxy
-  - traefik/docker-compose.yaml
-
   # backups
   - backup/docker-compose.yaml
 
@@ -10,3 +7,7 @@ include:
   - vaultwarden/docker-compose.yaml
   - mealie/docker-compose.yaml
   - uptime-kuma/docker-compose.yaml
+
+  #---
+  # reverse proxy
+  - traefik/docker-compose.yaml
