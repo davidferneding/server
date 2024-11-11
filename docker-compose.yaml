@@ -7,6 +7,7 @@ include:
   - vaultwarden/docker-compose.yaml
   - mealie/docker-compose.yaml
   - uptime-kuma/docker-compose.yaml
+  - plant-it/docker-compose.yaml
 
   #---
   # reverse proxy

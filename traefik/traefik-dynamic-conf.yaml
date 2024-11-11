@@ -37,6 +37,18 @@ http:
         - status-middleware
       entrypoints:
         - websecure
+    plant-it-router:
+      rule: "Host(`plants.d-f.dev`) && !PathPrefix(`/api`)"
+      tls: true
+      service: plant-it-service
+      entrypoints:
+        - websecure
+    plant-it-api-router:
+      rule: "Host(`plants.d-f.dev`) && PathPrefix(`/api`)"
+      tls: true
+      service: plant-it-api-service
+      entrypoints:
+        - websecure
 
   middlewares:
     status-middleware:
@@ -61,3 +73,11 @@ http:
       loadBalancer:
         servers:
           - url: http://uptime-kuma:3001
+    plant-it-service:
+      loadBalancer:
+        servers:
+          - url: http://plant-it:3000
+    plant-it-api-service:
+      loadBalancer:
+        servers:
+          - url: http://plant-it:8080
