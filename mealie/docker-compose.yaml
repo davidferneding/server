@@ -2,8 +2,6 @@ services:
   mealie:
     image: ghcr.io/mealie-recipes/mealie:latest
     restart: unless-stopped
-    ports:
-        - "9000:9000"
     volumes:
       - ../data/mealie/data:/app/data/
     environment:

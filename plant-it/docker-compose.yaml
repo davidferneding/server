@@ -8,8 +8,6 @@ services:
     restart: unless-stopped
     volumes:
       - "../data/plant-it/upload-dir:/upload-dir"
-    ports:
-      - "8080:8080"
 
   plant-it-db:
     image: mysql:8.0
