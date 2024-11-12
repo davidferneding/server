@@ -8,6 +8,8 @@ services:
     restart: unless-stopped
     volumes:
       - "../data/plant-it/upload-dir:/upload-dir"
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   plant-it-db:
     image: mysql:8.0
@@ -15,6 +17,8 @@ services:
     env_file: server.env
     volumes:
       - "../data/plant-it/db:/var/lib/mysql"
+    labels:
+      - docker-volume-backup.stop-during-backup=true
 
   plant-it-redis:
     image: redis:7.2.1
