@@ -1,7 +1,6 @@
 services:
   mealie:
     image: ghcr.io/mealie-recipes/mealie:latest
-    container_name: mealie
     restart: unless-stopped
     ports:
         - "9000:9000"
@@ -20,16 +19,15 @@ services:
       DB_ENGINE: postgres
       POSTGRES_USER: mealie
       POSTGRES_PASSWORD: mealie
-      POSTGRES_SERVER: postgres
+      POSTGRES_SERVER: mealie-db
       POSTGRES_PORT: 5432
       POSTGRES_DB: mealie
     depends_on:
-      - postgres
+      - mealie-db
     labels:
       - docker-volume-backup.stop-during-backup=true
 
-  postgres:
-    container_name: postgres
+  mealie-db:
     image: docker.io/library/postgres:16
     restart: unless-stopped
     volumes:

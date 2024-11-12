@@ -9,6 +9,5 @@ include:
   - uptime-kuma/docker-compose.yaml
   - plant-it/docker-compose.yaml
 
-  #---
   # reverse proxy
   - traefik/docker-compose.yaml
