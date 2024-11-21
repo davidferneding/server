@@ -4,6 +4,7 @@ services:
     command: 
       - "--entrypoints.websecure.address=:443"
       - "--providers.file.filename=/traefik-dynamic-conf.yaml"
+    restart: unless-stopped
     ports:
       - "443:443"
     volumes:
