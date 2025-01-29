@@ -2,12 +2,15 @@ services:
   reverse-proxy:
     image: traefik
     command: 
+      - "--accesslog"
+      - "--accesslog.filePath=/logs/access.log"
       - "--entrypoints.websecure.address=:443"
       - "--providers.file.filename=/traefik-dynamic-conf.yaml"
     restart: unless-stopped
     ports:
       - "443:443"
     volumes:
+      - ../logs/traefik/:/logs/
       - "./traefik-dynamic-conf.yaml:/traefik-dynamic-conf.yaml"
       - "./certs/d-f.dev.cert.pem:/d-f.dev.cert"
       - "./certs/d-f.dev.key.pem:/d-f.dev.key"

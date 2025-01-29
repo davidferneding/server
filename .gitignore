@@ -6,4 +6,5 @@
 paperless/consume/**/*
 paperless/export/**/*
 data/**/*
+logs/**/*
 backup/backups/**/*
