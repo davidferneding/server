@@ -1,6 +1,7 @@
 # secrets
 **/*.env
 **/*.pem
+**/acme.json
 
 # runtime data
 paperless/consume/**/*

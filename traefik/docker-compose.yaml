@@ -7,6 +7,10 @@ services:
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.websecure.http.middlewares=crowdsec@file"
       - "--providers.file.filename=/traefik-dynamic-conf.yaml"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=porkbun"
+      - "--certificatesresolvers.letsencrypt.acme.email=david@d-f.dev"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
       - "--experimental.plugins.crowdsec-bouncer.modulename=github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin"
       - "--experimental.plugins.crowdsec-bouncer.version=v1.4.0"
       - "--experimental.plugins.shorty.moduleName=github.com/Spakl-io/shorty"
@@ -19,7 +23,8 @@ services:
     volumes:
       - ../logs/traefik/:/logs/
       - "./traefik-dynamic-conf.yaml:/traefik-dynamic-conf.yaml"
-      - "./certs/d-f.dev.cert.pem:/d-f.dev.cert"
-      - "./certs/d-f.dev.key.pem:/d-f.dev.key"
+      - "./certs/acme.json:/acme.json"
     environment:
       - CROWDSEC_API_KEY
+      - PORKBUN_API_KEY
+      - PORKBUN_SECRET_API_KEY

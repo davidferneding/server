@@ -1,57 +1,60 @@
-tls:
-  certificates:
-    - certFile: /d-f.dev.cert
-      keyFile: /d-f.dev.key
-
 http:
   routers:
     paperless-router:
       rule: "Host(`paperless.d-f.dev`)"
-      tls: true
+      tls:
+        certResolver: letsencrypt
       service: paperless-service
       entrypoints:
         - websecure
     vaultwarden-router:
       rule: "Host(`pw.d-f.dev`)"
-      tls: true
+      tls:
+        certResolver: letsencrypt
       service: vaultwarden-service
       entrypoints:
         - websecure
     mealie-router:
       rule: "Host(`food.d-f.dev`)"
-      tls: true
+      tls:
+        certResolver: letsencrypt
       service: mealie-service
       entrypoints:
         - websecure
     uptime-router:
       rule: "Host(`uptime.d-f.dev`) || (Host(`status.d-f.dev`) && !Path(`/`))"
-      tls: true
+      tls:
+        certResolver: letsencrypt
       service: uptime-service
       entrypoints:
         - websecure
     status-router:
       rule: "Host(`status.d-f.dev`) && Path(`/`)"
-      tls: true
+      tls:
+        certResolver: letsencrypt
       service: uptime-service
-      middlewares: 
+      middlewares:
         - status-middleware
       entrypoints:
         - websecure
     plant-it-router:
       rule: "Host(`plants.d-f.dev`) && !PathPrefix(`/api`)"
-      tls: true
+      tls:
+        certResolver: letsencrypt
       service: plant-it-service
       entrypoints:
         - websecure
     plant-it-api-router:
       rule: "Host(`plants.d-f.dev`) && PathPrefix(`/api`)"
-      tls: true
+      tls:
+        certResolver: letsencrypt
       service: plant-it-api-service
       entrypoints:
         - websecure
     shorty-router:
       rule: "Host(`d-f.dev`)"
-      tls: true
+      tls:
+        certResolver: letsencrypt
       service: noop@internal
       middlewares:
         - shorty-middleware
