@@ -11,3 +11,6 @@ include:
 
   # reverse proxy
   - traefik/docker-compose.yaml
+
+  # security
+  - crowdsec/docker-compose.yaml

@@ -1,0 +1,13 @@
+services:
+  crowdsec:
+    image: crowdsecurity/crowdsec
+    container_name: crowdsec
+    environment:
+      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/base-http-scenarios crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-crs crowdsecurity/appsec-generic-rules MariuszKociubinski/bitwarden"
+    volumes:
+      - ../logs/crowdsec:/var/log/crowdsec:ro
+      - ../data/crowdsec/db:/var/lib/crowdsec/data
+      - ../logs/crowdsec/auth.log:/var/log/auth.log:ro
+      - ../data/crowdsec/config:/etc/crowdsec
+      - ../logs/traefik:/var/log/traefik:ro
+    restart: unless-stopped

@@ -55,6 +55,18 @@ http:
       redirectRegex:
         regex: ".*"
         replacement: "https://status.d-f.dev/status/"
+    crowdsec:
+      plugin:
+        crowdsec-bouncer:
+          enabled: true
+          defaultDecisionSeconds: 60
+          crowdsecMode: live
+          crowdsecAppsecEnabled: true
+          crowdsecAppsecHost: crowdsec:7422
+          crowdsecAppsecFailureBlock: true
+          crowdsecLapiKey: {{env "CROWDSEC_API_KEY"}}
+          crowdsecLapiHost: crowdsec:8080
+          crowdsecLapiScheme: http
 
   services:
     paperless-service:

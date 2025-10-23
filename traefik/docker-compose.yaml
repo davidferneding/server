@@ -5,12 +5,19 @@ services:
       - "--accesslog"
       - "--accesslog.filePath=/logs/access.log"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.middlewares=crowdsec@file"
       - "--providers.file.filename=/traefik-dynamic-conf.yaml"
+      - "--experimental.plugins.crowdsec-bouncer.modulename=github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin"
+      - "--experimental.plugins.crowdsec-bouncer.version=v1.4.0"
     restart: unless-stopped
     ports:
       - "443:443"
+    depends_on:
+      - crowdsec
     volumes:
       - ../logs/traefik/:/logs/
       - "./traefik-dynamic-conf.yaml:/traefik-dynamic-conf.yaml"
       - "./certs/d-f.dev.cert.pem:/d-f.dev.cert"
       - "./certs/d-f.dev.key.pem:/d-f.dev.key"
+    environment:
+      - CROWDSEC_API_KEY
