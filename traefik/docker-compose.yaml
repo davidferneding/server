@@ -9,6 +9,8 @@ services:
       - "--providers.file.filename=/traefik-dynamic-conf.yaml"
       - "--experimental.plugins.crowdsec-bouncer.modulename=github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin"
       - "--experimental.plugins.crowdsec-bouncer.version=v1.4.0"
+      - "--experimental.plugins.shorty.moduleName=github.com/Spakl-io/shorty"
+      - "--experimental.plugins.shorty.version=v1.0.1"
     restart: unless-stopped
     ports:
       - "443:443"

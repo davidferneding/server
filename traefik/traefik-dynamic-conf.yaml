@@ -49,12 +49,24 @@ http:
       service: plant-it-api-service
       entrypoints:
         - websecure
+    shorty-router:
+      rule: "Host(`d-f.dev`)"
+      tls: true
+      service: noop@internal
+      middlewares:
+        - shorty-middleware
 
   middlewares:
     status-middleware:
       redirectRegex:
         regex: ".*"
         replacement: "https://status.d-f.dev/status/"
+    shorty-middleware:
+      plugin:
+        shorty:
+          links:
+            wordle: "https://transfer.amcon.de/d656c3574e6b"
+            wasser: "https://www.icloud.com/iclouddrive/06d0sTp578AdyRfiKQUW_0MHg#San-Training_Wasserrettung"
     crowdsec:
       plugin:
         crowdsec-bouncer:
