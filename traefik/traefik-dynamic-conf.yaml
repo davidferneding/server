@@ -68,7 +68,7 @@ http:
       plugin:
         shorty:
           links:
-            wordle: "https://transfer.amcon.de/d656c3574e6b"
+            wordle: "https://github.com/davidferneding/wordle"
             wasser: "https://www.icloud.com/iclouddrive/06d0sTp578AdyRfiKQUW_0MHg#San-Training_Wasserrettung"
     crowdsec:
       plugin:
