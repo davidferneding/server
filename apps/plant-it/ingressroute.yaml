@@ -1,0 +1,31 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: plant-it
+  namespace: server
+  labels:
+    app.kubernetes.io/name: plant-it
+    app.kubernetes.io/component: ingress
+    app.kubernetes.io/part-of: server
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: "Host(`plants.d-f.dev`) && !PathPrefix(`/api`)"
+      kind: Rule
+      services:
+        - name: plant-it
+          port: 3000
+      middlewares:
+        - name: crowdsec
+          namespace: server
+    - match: "Host(`plants.d-f.dev`) && PathPrefix(`/api`)"
+      kind: Rule
+      services:
+        - name: plant-it
+          port: 8080
+      middlewares:
+        - name: crowdsec
+          namespace: server
+  tls:
+    certResolver: letsencrypt

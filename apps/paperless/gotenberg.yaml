@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless-gotenberg
+  namespace: server
+  labels:
+    app.kubernetes.io/name: paperless-gotenberg
+    app.kubernetes.io/component: app
+    app.kubernetes.io/part-of: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: paperless-gotenberg
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: paperless-gotenberg
+        app.kubernetes.io/component: app
+        app.kubernetes.io/part-of: server
+    spec:
+      containers:
+        - name: gotenberg
+          image: docker.io/gotenberg/gotenberg:8.7
+          ports:
+            - containerPort: 3000
+          command:
+            - "gotenberg"
+            - "--chromium-disable-javascript=true"
+            - "--chromium-allow-list=file:///tmp/.*"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: paperless-gotenberg
+  namespace: server
+  labels:
+    app.kubernetes.io/name: paperless-gotenberg
+    app.kubernetes.io/component: service
+    app.kubernetes.io/part-of: server
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: paperless-gotenberg
+  ports:
+    - port: 3000
+      targetPort: 3000

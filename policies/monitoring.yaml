@@ -1,0 +1,94 @@
+# Prometheus: allow from Grafana
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 9090
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: grafana
+---
+# Loki: allow from Promtail (push) and Grafana (query)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-loki
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: loki
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 3100
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: promtail
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: grafana
+---
+# Grafana: allow from Traefik
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-grafana
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 3000
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+---
+# Node Exporter: allow from Prometheus
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-node-exporter
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: node-exporter
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 9100
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus

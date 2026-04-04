@@ -1,0 +1,166 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backup-storage
+  namespace: server
+  labels:
+    app.kubernetes.io/name: backup
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: server
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-scripts
+  namespace: server
+  labels:
+    app.kubernetes.io/name: backup
+    app.kubernetes.io/component: scripts
+    app.kubernetes.io/part-of: server
+data:
+  backup.sh: |
+    #!/bin/bash
+    set -euo pipefail
+
+    TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    BACKUP_DIR="/backups/${TIMESTAMP}"
+    mkdir -p "${BACKUP_DIR}"
+
+    echo "=== Starting backup ${TIMESTAMP} ==="
+
+    # Dump PostgreSQL databases
+    echo "Dumping PostgreSQL databases..."
+    PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump -h postgresql -U postgres -d paperless > "${BACKUP_DIR}/paperless.sql"
+    PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump -h postgresql -U postgres -d mealie > "${BACKUP_DIR}/mealie.sql"
+
+    # Dump MySQL database
+    echo "Dumping MySQL database..."
+    mysqldump -h mysql -u root -p"${MYSQL_ROOT_PASSWORD}" bootdb > "${BACKUP_DIR}/bootdb.sql"
+
+    # Copy file-based data
+    echo "Copying file data..."
+    cp -r /data/vaultwarden "${BACKUP_DIR}/vaultwarden" 2>/dev/null || true
+    cp -r /data/uptime-kuma "${BACKUP_DIR}/uptime-kuma" 2>/dev/null || true
+    cp -r /data/plant-it "${BACKUP_DIR}/plant-it" 2>/dev/null || true
+
+    # Create archive
+    echo "Creating archive..."
+    ARCHIVE="/backups/backup-${TIMESTAMP}.tar.gz"
+    tar -czf "${ARCHIVE}" -C "${BACKUP_DIR}" .
+
+    # Encrypt with GPG
+    echo "Encrypting backup..."
+    echo "${GPG_PASSPHRASE}" | gpg --batch --yes --passphrase-fd 0 --symmetric --cipher-algo AES256 -o "${ARCHIVE}.gpg" "${ARCHIVE}"
+    rm -f "${ARCHIVE}"
+
+    # Upload via rclone (provider-agnostic)
+    REMOTE="${RCLONE_REMOTE:-backup}"
+    REMOTE_PATH="${RCLONE_REMOTE_PATH:-/backups}"
+    echo "Uploading to rclone remote '${REMOTE}:${REMOTE_PATH}'..."
+    rclone copy "${ARCHIVE}.gpg" "${REMOTE}:${REMOTE_PATH}/" --progress
+
+    # Cleanup remote backups older than retention period
+    echo "Cleaning up old remote backups..."
+    rclone delete "${REMOTE}:${REMOTE_PATH}/" --min-age "${BACKUP_RETENTION_DAYS:-14}d" 2>/dev/null || true
+
+    # Cleanup local
+    echo "Cleaning up local backups..."
+    find /backups -name "backup-*.tar.gz.gpg" -mtime +${BACKUP_RETENTION_DAYS:-14} -delete
+    rm -rf "${BACKUP_DIR}"
+
+    echo "=== Backup completed ==="
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup
+  namespace: server
+  labels:
+    app.kubernetes.io/name: backup
+    app.kubernetes.io/component: cronjob
+    app.kubernetes.io/part-of: server
+spec:
+  schedule: "0 4 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: backup
+              image: alpine:3.19
+              command:
+                - /bin/sh
+                - -c
+                - apk add --no-cache postgresql16-client mysql-client gnupg rclone && /scripts/backup.sh
+              env:
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgresql-secret
+                      key: POSTGRES_PASSWORD
+                - name: MYSQL_ROOT_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: mysql-secret
+                      key: MYSQL_ROOT_PASSWORD
+                - name: GPG_PASSPHRASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-secret
+                      key: GPG_PASSPHRASE
+                - name: RCLONE_REMOTE
+                  value: "backup"
+                - name: RCLONE_REMOTE_PATH
+                  value: "/backups"
+                - name: BACKUP_RETENTION_DAYS
+                  value: "14"
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                - name: rclone-config
+                  mountPath: /root/.config/rclone
+                  readOnly: true
+                - name: backup-storage
+                  mountPath: /backups
+                - name: vaultwarden-data
+                  mountPath: /data/vaultwarden
+                  readOnly: true
+                - name: uptime-kuma-data
+                  mountPath: /data/uptime-kuma
+                  readOnly: true
+                - name: plant-it-data
+                  mountPath: /data/plant-it
+                  readOnly: true
+          restartPolicy: OnFailure
+          volumes:
+            - name: scripts
+              configMap:
+                name: backup-scripts
+                defaultMode: 0755
+            - name: rclone-config
+              secret:
+                secretName: backup-secret
+                items:
+                  - key: rclone.conf
+                    path: rclone.conf
+            - name: backup-storage
+              persistentVolumeClaim:
+                claimName: backup-storage
+            - name: vaultwarden-data
+              persistentVolumeClaim:
+                claimName: vaultwarden-data
+            - name: uptime-kuma-data
+              persistentVolumeClaim:
+                claimName: uptime-kuma-data
+            - name: plant-it-data
+              persistentVolumeClaim:
+                claimName: plant-it-data

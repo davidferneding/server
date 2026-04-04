@@ -1,0 +1,87 @@
+# Traefik: allow inbound from anywhere on HTTPS, metrics from Prometheus
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-traefik
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: traefik
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 443
+    - ports:
+        - port: 8082
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+---
+# CrowdSec: allow from Traefik (LAPI + AppSec), metrics from Prometheus
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-crowdsec
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: crowdsec
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 8080
+        - port: 7422
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+    - ports:
+        - port: 6060
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+---
+# Authentik: allow from Traefik (UI + forward-auth)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-authentik
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: authentik
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 9000
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+        # Apps call Authentik internally for OIDC token exchange
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: grafana
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: paperless
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: mealie

@@ -1,9 +1,0 @@
-services:
-  backup:
-    image: offen/docker-volume-backup:latest
-    restart: always
-    env_file: backup.env
-    volumes:
-      - ../data:/backup:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./backups:/archive

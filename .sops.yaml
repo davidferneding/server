@@ -1,0 +1,7 @@
+# SOPS configuration
+# All secret.yaml files are encrypted with age.
+# Generate a key:   age-keygen -o keys.txt
+# Store the public key below, backup the private key safely (e.g., in Vaultwarden).
+creation_rules:
+  - path_regex: .*secret\.yaml$
+    age: "age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

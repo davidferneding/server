@@ -1,0 +1,14 @@
+# Default deny all ingress traffic in the server namespace.
+# Each service must explicitly allow inbound connections.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
