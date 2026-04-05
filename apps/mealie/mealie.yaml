@@ -40,8 +40,8 @@ data:
   SMTP_FROM_EMAIL: "noreply@d-f.dev"
   SMTP_USER: "noreply@d-f.dev"
   # Authentik OIDC
-  OIDC_AUTH_ENABLED: "true"
-  OIDC_SIGNUP_ENABLED: "true"
+  OIDC_AUTH_ENABLED: "false"
+  OIDC_SIGNUP_ENABLED: "false"
   OIDC_CONFIGURATION_URL: "https://auth.d-f.dev/application/o/mealie/.well-known/openid-configuration"
   OIDC_AUTO_REDIRECT: "false"
   OIDC_PROVIDER_NAME: "Authentik"

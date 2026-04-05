@@ -4,4 +4,4 @@
 # Store the public key below, backup the private key safely (e.g., in Vaultwarden).
 creation_rules:
   - path_regex: .*secret\.yaml$
-    age: "age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    age: "age1qhck7uvr0kywmqgkvzw68w9zj83fyhp4drjc73fdfr89g74utspskgfs50"
