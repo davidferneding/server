@@ -36,7 +36,7 @@ spec:
                   key: MYSQL_ROOT_PASSWORD
             - name: MYSQL_DATABASE
               value: "bootdb"
-          args: ["--default-authentication-plugin=mysql_native_password"]
+          args: ["--default-auth=mysql_native_password"]
           volumeMounts:
             - name: data
               mountPath: /var/lib/mysql
