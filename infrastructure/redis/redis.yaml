@@ -39,7 +39,7 @@ spec:
     spec:
       containers:
         - name: redis
-          image: redis:7
+          image: redis:8.6.2
           command: ["redis-server", "--appendonly", "yes"]
           ports:
             - containerPort: 6379
@@ -58,7 +58,7 @@ spec:
               command: ["redis-cli", "ping"]
             periodSeconds: 10
         - name: redis-exporter
-          image: oliver006/redis_exporter:latest
+          image: oliver006/redis_exporter:v1.82.0
           ports:
             - containerPort: 9121
           resources:
