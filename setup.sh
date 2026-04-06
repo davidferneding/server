@@ -5,6 +5,8 @@
 # Make executable: chmod +x setup.sh
 set -euo pipefail
 
+export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
+
 echo "=== Home Server Kubernetes Setup ==="
 echo ""
 
