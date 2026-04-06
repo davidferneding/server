@@ -12,7 +12,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 20Gi
+      storage: 40Gi
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -25,7 +25,7 @@ metadata:
     app.kubernetes.io/part-of: server
 data:
   backup.sh: |
-    #!/bin/bash
+    #!/bin/sh
     set -euo pipefail
 
     TIMESTAMP=$(date +%Y%m%d-%H%M%S)
@@ -38,16 +38,34 @@ data:
     echo "Dumping PostgreSQL databases..."
     PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump -h postgresql -U postgres -d paperless > "${BACKUP_DIR}/paperless.sql"
     PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump -h postgresql -U postgres -d mealie > "${BACKUP_DIR}/mealie.sql"
+    PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump -h postgresql -U postgres -d authentik > "${BACKUP_DIR}/authentik.sql"
+    PGPASSWORD="${POSTGRES_PASSWORD}" pg_dumpall -h postgresql -U postgres > "${BACKUP_DIR}/postgres-all.sql"
 
-    # Dump MySQL database
-    echo "Dumping MySQL database..."
+    # Dump MySQL databases
+    echo "Dumping MySQL databases..."
     mysqldump -h mysql -u root -p"${MYSQL_ROOT_PASSWORD}" bootdb > "${BACKUP_DIR}/bootdb.sql"
+    mysqldump -h mysql -u root -p"${MYSQL_ROOT_PASSWORD}" --all-databases > "${BACKUP_DIR}/mysql-all.sql"
 
-    # Copy file-based data
-    echo "Copying file data..."
+    # Copy application data
+    echo "Copying application data..."
     cp -r /data/vaultwarden "${BACKUP_DIR}/vaultwarden" 2>/dev/null || true
     cp -r /data/uptime-kuma "${BACKUP_DIR}/uptime-kuma" 2>/dev/null || true
     cp -r /data/plant-it "${BACKUP_DIR}/plant-it" 2>/dev/null || true
+    cp -r /data/mealie "${BACKUP_DIR}/mealie" 2>/dev/null || true
+    cp -r /data/paperless "${BACKUP_DIR}/paperless" 2>/dev/null || true
+
+    # Copy infrastructure data
+    echo "Copying infrastructure data..."
+    cp -r /data/grafana "${BACKUP_DIR}/grafana" 2>/dev/null || true
+    cp -r /data/crowdsec "${BACKUP_DIR}/crowdsec" 2>/dev/null || true
+    cp -r /data/traefik "${BACKUP_DIR}/traefik" 2>/dev/null || true
+    cp -r /data/redis "${BACKUP_DIR}/redis" 2>/dev/null || true
+
+    # NOTE: Loki and Prometheus are excluded — they hold regenerable
+    # monitoring data (10Gi each) that would significantly inflate backups.
+    # Uncomment below and add matching volume/volumeMount entries if needed:
+    # cp -r /data/loki "${BACKUP_DIR}/loki" 2>/dev/null || true
+    # cp -r /data/prometheus "${BACKUP_DIR}/prometheus" 2>/dev/null || true
 
     # Create archive
     echo "Creating archive..."
@@ -131,6 +149,7 @@ spec:
                   readOnly: true
                 - name: backup-storage
                   mountPath: /backups
+                # Application data
                 - name: vaultwarden-data
                   mountPath: /data/vaultwarden
                   readOnly: true
@@ -139,6 +158,37 @@ spec:
                   readOnly: true
                 - name: plant-it-data
                   mountPath: /data/plant-it
+                  readOnly: true
+                - name: mealie-data
+                  mountPath: /data/mealie
+                  readOnly: true
+                - name: paperless-data
+                  mountPath: /data/paperless/data
+                  readOnly: true
+                - name: paperless-media
+                  mountPath: /data/paperless/media
+                  readOnly: true
+                - name: paperless-export
+                  mountPath: /data/paperless/export
+                  readOnly: true
+                - name: paperless-consume
+                  mountPath: /data/paperless/consume
+                  readOnly: true
+                # Infrastructure data
+                - name: grafana-data
+                  mountPath: /data/grafana
+                  readOnly: true
+                - name: crowdsec-data
+                  mountPath: /data/crowdsec/data
+                  readOnly: true
+                - name: crowdsec-config
+                  mountPath: /data/crowdsec/config
+                  readOnly: true
+                - name: traefik-acme
+                  mountPath: /data/traefik/acme
+                  readOnly: true
+                - name: redis-data
+                  mountPath: /data/redis
                   readOnly: true
           restartPolicy: OnFailure
           volumes:
@@ -155,6 +205,7 @@ spec:
             - name: backup-storage
               persistentVolumeClaim:
                 claimName: backup-storage
+            # Application data
             - name: vaultwarden-data
               persistentVolumeClaim:
                 claimName: vaultwarden-data
@@ -164,3 +215,34 @@ spec:
             - name: plant-it-data
               persistentVolumeClaim:
                 claimName: plant-it-data
+            - name: mealie-data
+              persistentVolumeClaim:
+                claimName: mealie-data
+            - name: paperless-data
+              persistentVolumeClaim:
+                claimName: paperless-data
+            - name: paperless-media
+              persistentVolumeClaim:
+                claimName: paperless-media
+            - name: paperless-export
+              persistentVolumeClaim:
+                claimName: paperless-export
+            - name: paperless-consume
+              persistentVolumeClaim:
+                claimName: paperless-consume
+            # Infrastructure data
+            - name: grafana-data
+              persistentVolumeClaim:
+                claimName: grafana-data
+            - name: crowdsec-data
+              persistentVolumeClaim:
+                claimName: crowdsec-data
+            - name: crowdsec-config
+              persistentVolumeClaim:
+                claimName: crowdsec-config
+            - name: traefik-acme
+              persistentVolumeClaim:
+                claimName: traefik-acme
+            - name: redis-data
+              persistentVolumeClaim:
+                claimName: redis-data
