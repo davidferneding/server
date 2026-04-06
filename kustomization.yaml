@@ -33,8 +33,6 @@ resources:
   # Monitoring
   - infrastructure/prometheus/prometheus.yaml
   - infrastructure/prometheus/node-exporter.yaml
-  - infrastructure/loki/loki.yaml
-  - infrastructure/loki/promtail.yaml
   - infrastructure/grafana/secret.yaml
   - infrastructure/grafana/grafana.yaml
   - infrastructure/grafana/ingressroute.yaml

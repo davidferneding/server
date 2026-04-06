@@ -29,7 +29,6 @@
       "matchPackageNames": [
         "/prometheus/",
         "/grafana/",
-        "/loki/",
         "/promtail/"
       ]
     },
