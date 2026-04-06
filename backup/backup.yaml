@@ -84,13 +84,13 @@ data:
     rclone copy "${ARCHIVE}.gpg" "${REMOTE}:${REMOTE_PATH}/" --progress
 
     # Cleanup remote backups older than retention period
-    echo "Cleaning up old remote backups..."
-    rclone delete "${REMOTE}:${REMOTE_PATH}/" --min-age "${BACKUP_RETENTION_DAYS:-14}d" 2>/dev/null || true
+    #echo "Cleaning up old remote backups..."
+    #rclone delete "${REMOTE}:${REMOTE_PATH}/" --min-age "${BACKUP_RETENTION_DAYS:-14}d" 2>/dev/null || true
 
     # Cleanup local
-    echo "Cleaning up local backups..."
-    find /backups -name "backup-*.tar.gz.gpg" -mtime +${BACKUP_RETENTION_DAYS:-14} -delete
-    rm -rf "${BACKUP_DIR}"
+    #echo "Cleaning up local backups..."
+    #find /backups -name "backup-*.tar.gz.gpg" -mtime +${BACKUP_RETENTION_DAYS:-14} -delete
+    #rm -rf "${BACKUP_DIR}"
 
     echo "=== Backup completed ==="
 ---
