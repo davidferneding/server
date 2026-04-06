@@ -140,7 +140,7 @@ spec:
                       name: backup-secret
                       key: GPG_PASSPHRASE
                 - name: RCLONE_REMOTE
-                  value: "d-f-dev"
+                  value: "d-f-dev/d-f-dev"
                 - name: RCLONE_REMOTE_PATH
                   value: "/backups"
                 - name: BACKUP_RETENTION_DAYS
