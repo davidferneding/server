@@ -54,7 +54,7 @@ spec:
     spec:
       containers:
         - name: crowdsec
-          image: crowdsecurity/crowdsec
+          image: crowdsecurity/crowdsec:v1.7.7
           ports:
             - containerPort: 6060
               name: metrics

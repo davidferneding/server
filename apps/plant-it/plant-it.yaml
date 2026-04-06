@@ -62,7 +62,7 @@ spec:
     spec:
       containers:
         - name: plant-it
-          image: msdeluise/plant-it-server:latest
+          image: msdeluise/plant-it-server:v1.0.1
           ports:
             - name: frontend
               containerPort: 3000

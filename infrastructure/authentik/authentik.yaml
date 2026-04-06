@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: authentik
-          image: ghcr.io/goauthentik/server:latest
+          image: ghcr.io/goauthentik/server:2026.2.1
           args: ["server"]
           ports:
             - containerPort: 9000
