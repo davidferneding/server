@@ -118,7 +118,7 @@ spec:
         spec:
           containers:
             - name: backup
-              image: alpine:3.19
+              image: alpine:3.23
               command:
                 - /bin/sh
                 - -c
