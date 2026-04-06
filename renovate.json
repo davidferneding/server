@@ -8,25 +8,39 @@
     "schedule:weekends"
   ],
   "kubernetes": {
-    "fileMatch": [".+\\.yaml$"]
+    "managerFilePatterns": [
+      "/.+\.yaml$/"
+    ]
   },
   "packageRules": [
     {
       "description": "Group database updates together",
-      "matchPackagePatterns": ["postgres", "mysql", "redis"],
       "groupName": "databases",
-      "automerge": false
+      "automerge": false,
+      "matchPackageNames": [
+        "/postgres/",
+        "/mysql/",
+        "/redis/"
+      ]
     },
     {
       "description": "Group monitoring stack updates",
-      "matchPackagePatterns": ["prometheus", "grafana", "loki", "promtail"],
-      "groupName": "monitoring"
+      "groupName": "monitoring",
+      "matchPackageNames": [
+        "/prometheus/",
+        "/grafana/",
+        "/loki/",
+        "/promtail/"
+      ]
     },
     {
       "description": "Group security updates",
-      "matchPackagePatterns": ["crowdsec", "authentik"],
       "groupName": "security",
-      "automerge": false
+      "automerge": false,
+      "matchPackageNames": [
+        "/crowdsec/",
+        "/authentik/"
+      ]
     },
     {
       "description": "Pin digest for critical services",
