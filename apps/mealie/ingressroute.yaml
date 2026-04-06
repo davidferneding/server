@@ -1,0 +1,23 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mealie
+  namespace: server
+  labels:
+    app.kubernetes.io/name: mealie
+    app.kubernetes.io/component: ingress
+    app.kubernetes.io/part-of: server
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: "Host(`food.d-f.dev`)"
+      kind: Rule
+      services:
+        - name: mealie
+          port: 9000
+      middlewares:
+        - name: crowdsec
+          namespace: server
+  tls:
+    certResolver: letsencrypt

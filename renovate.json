@@ -1,0 +1,37 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "docker:enableMajor",
+    ":automergeMinor",
+    ":automergePatch",
+    "schedule:weekends"
+  ],
+  "kubernetes": {
+    "fileMatch": [".+\\.yaml$"]
+  },
+  "packageRules": [
+    {
+      "description": "Group database updates together",
+      "matchPackagePatterns": ["postgres", "mysql", "redis"],
+      "groupName": "databases",
+      "automerge": false
+    },
+    {
+      "description": "Group monitoring stack updates",
+      "matchPackagePatterns": ["prometheus", "grafana", "loki", "promtail"],
+      "groupName": "monitoring"
+    },
+    {
+      "description": "Group security updates",
+      "matchPackagePatterns": ["crowdsec", "authentik"],
+      "groupName": "security",
+      "automerge": false
+    },
+    {
+      "description": "Pin digest for critical services",
+      "matchPackageNames": ["vaultwarden/server"],
+      "automerge": false
+    }
+  ]
+}

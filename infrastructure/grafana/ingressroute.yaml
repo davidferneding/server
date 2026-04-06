@@ -1,0 +1,23 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana
+  namespace: server
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: ingress
+    app.kubernetes.io/part-of: server
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: "Host(`grafana.d-f.dev`)"
+      kind: Rule
+      services:
+        - name: grafana
+          port: 3000
+      middlewares:
+        - name: crowdsec
+          namespace: server
+  tls:
+    certResolver: letsencrypt

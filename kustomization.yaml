@@ -1,0 +1,70 @@
+# NOTE: This kustomization references .example.yaml secret files for reference.
+# Before deploying, copy each secret.example.yaml to secret.yaml, fill in real
+# values, and update the paths below (e.g. secret.example.yaml -> secret.yaml).
+# Actual secret files are excluded from version control via .gitignore.
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # Namespace
+  - namespace.yaml
+
+  # Infrastructure - Databases
+  - infrastructure/postgresql/secret.example.yaml
+  - infrastructure/postgresql/postgresql.yaml
+  - infrastructure/mysql/secret.example.yaml
+  - infrastructure/mysql/mysql.yaml
+  - infrastructure/redis/redis.yaml
+
+  # Infrastructure - Networking & Security
+  - infrastructure/traefik/rbac.yaml
+  - infrastructure/traefik/secret.example.yaml
+  - infrastructure/traefik/configmap.yaml
+  - infrastructure/traefik/traefik.yaml
+  - infrastructure/traefik/middlewares.yaml
+  - infrastructure/traefik/ingressroute-shorty.yaml
+  - infrastructure/crowdsec/crowdsec.yaml
+
+  # Identity Provider
+  - infrastructure/authentik/secret.example.yaml
+  - infrastructure/authentik/authentik.yaml
+  - infrastructure/authentik/middleware.yaml
+  - infrastructure/authentik/ingressroute.yaml
+
+  # Monitoring
+  - infrastructure/prometheus/prometheus.yaml
+  - infrastructure/prometheus/node-exporter.yaml
+  - infrastructure/loki/loki.yaml
+  - infrastructure/loki/promtail.yaml
+  - infrastructure/grafana/secret.example.yaml
+  - infrastructure/grafana/grafana.yaml
+  - infrastructure/grafana/ingressroute.yaml
+
+  # Applications
+  - apps/paperless/secret.example.yaml
+  - apps/paperless/paperless.yaml
+  - apps/paperless/gotenberg.yaml
+  - apps/paperless/tika.yaml
+  - apps/paperless/ingressroute.yaml
+  - apps/vaultwarden/vaultwarden.yaml
+  - apps/vaultwarden/ingressroute.yaml
+  - apps/mealie/secret.example.yaml
+  - apps/mealie/mealie.yaml
+  - apps/mealie/ingressroute.yaml
+  - apps/uptime-kuma/uptime-kuma.yaml
+  - apps/uptime-kuma/ingressroute.yaml
+  - apps/plant-it/secret.example.yaml
+  - apps/plant-it/plant-it.yaml
+  - apps/plant-it/ingressroute.yaml
+
+  # Backup
+  - backup/secret.example.yaml
+  - backup/backup.yaml
+
+  # Network Policies
+  - policies/default-deny.yaml
+  - policies/databases.yaml
+  - policies/infrastructure.yaml
+  - policies/apps.yaml
+  - policies/monitoring.yaml

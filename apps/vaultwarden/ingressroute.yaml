@@ -1,0 +1,23 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: vaultwarden
+  namespace: server
+  labels:
+    app.kubernetes.io/name: vaultwarden
+    app.kubernetes.io/component: ingress
+    app.kubernetes.io/part-of: server
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: "Host(`pw.d-f.dev`)"
+      kind: Rule
+      services:
+        - name: vaultwarden
+          port: 80
+      middlewares:
+        - name: crowdsec
+          namespace: server
+  tls:
+    certResolver: letsencrypt

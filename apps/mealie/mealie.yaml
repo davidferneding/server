@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mealie-data
+  namespace: server
+  labels:
+    app.kubernetes.io/name: mealie
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: server
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mealie-config
+  namespace: server
+  labels:
+    app.kubernetes.io/name: mealie
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: server
+data:
+  ALLOW_SIGNUP: "true"
+  PUID: "1000"
+  PGID: "1000"
+  TZ: "Europe/Berlin"
+  MAX_WORKERS: "1"
+  WEB_CONCURRENCY: "1"
+  BASE_URL: "https://food.d-f.dev"
+  DB_ENGINE: "postgres"
+  POSTGRES_USER: "mealie"
+  POSTGRES_SERVER: "postgresql"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "mealie"
+  SMTP_HOST: "smtp.purelymail.com"
+  SMTP_FROM_EMAIL: "noreply@d-f.dev"
+  SMTP_USER: "noreply@d-f.dev"
+  # Authentik OIDC
+  OIDC_AUTH_ENABLED: "true"
+  OIDC_SIGNUP_ENABLED: "true"
+  OIDC_CONFIGURATION_URL: "https://auth.d-f.dev/application/o/mealie/.well-known/openid-configuration"
+  OIDC_AUTO_REDIRECT: "false"
+  OIDC_PROVIDER_NAME: "Authentik"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mealie
+  namespace: server
+  labels:
+    app.kubernetes.io/name: mealie
+    app.kubernetes.io/component: app
+    app.kubernetes.io/part-of: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mealie
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mealie
+        app.kubernetes.io/component: app
+        app.kubernetes.io/part-of: server
+    spec:
+      containers:
+        - name: mealie
+          image: ghcr.io/mealie-recipes/mealie:latest
+          ports:
+            - containerPort: 9000
+          envFrom:
+            - configMapRef:
+                name: mealie-config
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: MEALIE_DB_PASSWORD
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mealie-secret
+                  key: SMTP_PASSWORD
+#            - name: OIDC_CLIENT_ID
+#              valueFrom:
+#                secretKeyRef:
+#                  name: mealie-secret
+#                  key: OIDC_CLIENT_ID
+#            - name: OIDC_CLIENT_SECRET
+#              valueFrom:
+#                secretKeyRef:
+#                  name: mealie-secret
+#                  key: OIDC_CLIENT_SECRET
+          volumeMounts:
+            - name: mealie-data
+              mountPath: /app/data/
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+      volumes:
+        - name: mealie-data
+          persistentVolumeClaim:
+            claimName: mealie-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mealie
+  namespace: server
+  labels:
+    app.kubernetes.io/name: mealie
+    app.kubernetes.io/component: service
+    app.kubernetes.io/part-of: server
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: mealie
+  ports:
+    - port: 9000
+      targetPort: 9000

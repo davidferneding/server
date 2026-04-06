@@ -1,0 +1,105 @@
+# PostgreSQL: allow from paperless, mealie, authentik, backup, postgres-exporter scrape
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-postgresql
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 5432
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: paperless
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: mealie
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: authentik
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: backup
+    # Prometheus scraping postgres-exporter sidecar
+    - ports:
+        - port: 9187
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+---
+# MySQL: allow from plant-it, backup, mysqld-exporter scrape
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-mysql
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: mysql
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 3306
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: plant-it
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: backup
+    - ports:
+        - port: 9104
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+---
+# Redis: allow from paperless, plant-it, authentik, redis-exporter scrape
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-redis
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 6379
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: paperless
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: plant-it
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: authentik
+    - ports:
+        - port: 9121
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus

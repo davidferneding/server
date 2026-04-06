@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-config
+  namespace: server
+  labels:
+    app.kubernetes.io/name: traefik
+    app.kubernetes.io/component: ingress
+    app.kubernetes.io/part-of: server
+data:
+  traefik.yaml: |
+    entryPoints:
+      websecure:
+        address: ":443"
+      metrics:
+        address: ":8082"
+
+    providers:
+      kubernetesCRD:
+        namespaces:
+          - server
+
+    certificatesResolvers:
+      letsencrypt:
+        acme:
+          email: david@d-f.dev
+          storage: /acme/acme.json
+          dnsChallenge:
+            provider: porkbun
+
+    experimental:
+      plugins:
+        crowdsec-bouncer:
+          moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+          version: v1.4.0
+        shorty:
+          moduleName: github.com/Spakl-io/shorty
+          version: v1.0.1
+
+    accessLog:
+      filePath: /logs/access.log
+
+    metrics:
+      prometheus:
+        entryPoint: metrics
+        addEntryPointsLabels: true
+        addServicesLabels: true
+        addRoutersLabels: true
+
+    log:
+      level: INFO

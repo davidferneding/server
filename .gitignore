@@ -1,11 +1,10 @@
 # secrets
-**/*.env
 **/*.pem
-**/acme.json
 
-# runtime data
-paperless/consume/**/*
-paperless/export/**/*
-data/**/*
-logs/**/*
-backup/backups/**/*
+# kubernetes secrets — safe to commit when encrypted with SOPS
+# Uncomment these lines ONLY if you do NOT use SOPS encryption:
+# **/secret.yaml
+# **/secrets.yaml
+
+# age private key — NEVER commit this (back it up in Vaultwarden)
+keys.txt
