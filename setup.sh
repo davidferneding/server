@@ -1,6 +1,6 @@
 #!/bin/bash
 # Setup script for the Kubernetes home server cluster
-# Prerequisites: kubectl, a running Kubernetes cluster (k3s recommended)
+# Prerequisites: kubectl, flux, a running Kubernetes cluster (k3s recommended)
 #
 # Make executable: chmod +x setup.sh
 set -euo pipefail
@@ -11,6 +11,7 @@ echo ""
 # Check prerequisites
 command -v kubectl >/dev/null 2>&1 || { echo "kubectl is required but not installed."; exit 1; }
 command -v sops >/dev/null 2>&1 || { echo "sops is required but not installed. Install: brew install sops"; exit 1; }
+command -v flux >/dev/null 2>&1 || { echo "flux is required but not installed. Install: brew install fluxcd/tap/flux"; exit 1; }
 
 # Decrypt secrets if encrypted with SOPS
 SOPS_DECRYPTED=()
@@ -140,9 +141,59 @@ echo ""
 echo "Step 10: Applying network policies..."
 kubectl apply -f policies/
 
+# Step 11: Install Flux CD for GitOps
+echo ""
+echo "Step 11: Installing Flux CD..."
+echo "Flux will watch the Git repository and auto-reconcile on changes."
+echo ""
+
+flux check --pre
+flux install
+
+# Provide the age private key so Flux can decrypt SOPS secrets
+echo ""
+echo "Creating SOPS age decryption secret for Flux..."
+if [ -f keys.txt ]; then
+  kubectl create secret generic sops-age \
+    --namespace=flux-system \
+    --from-file=age.agekey=keys.txt \
+    --dry-run=client -o yaml | kubectl apply -f -
+else
+  echo "WARNING: keys.txt not found. Create the SOPS secret manually:"
+  echo "  kubectl create secret generic sops-age --namespace=flux-system --from-file=age.agekey=keys.txt"
+fi
+
+# Create deploy key secret for Git access
+echo ""
+echo "Setting up Git repository access..."
+if [ -f ~/.ssh/flux_deploy_key ]; then
+  kubectl create secret generic flux-deploy-key \
+    --namespace=flux-system \
+    --from-file=identity=~/.ssh/flux_deploy_key \
+    --from-literal=known_hosts="$(ssh-keyscan github.com 2>/dev/null)" \
+    --type=Opaque \
+    --dry-run=client -o yaml | kubectl apply -f -
+else
+  echo "WARNING: ~/.ssh/flux_deploy_key not found."
+  echo "Generate a deploy key and add it to your GitHub repo:"
+  echo "  ssh-keygen -t ed25519 -f ~/.ssh/flux_deploy_key -N ''"
+  echo "  # Add the public key as a deploy key in GitHub repo settings"
+  echo "  kubectl create secret generic flux-deploy-key --namespace=flux-system \\"
+  echo "    --from-file=identity=~/.ssh/flux_deploy_key \\"
+  echo "    --from-literal=known_hosts=\"\$(ssh-keyscan github.com 2>/dev/null)\" \\"
+  echo "    --type=Opaque"
+fi
+
+# Apply Flux GitRepository and Kustomization
+echo ""
+echo "Applying Flux sync configuration..."
+kubectl apply -f infrastructure/flux/source.yaml
+kubectl apply -f infrastructure/flux/sync.yaml
+
 echo ""
 echo "=== Setup complete! ==="
 echo ""
-echo "Check pod status with: kubectl -n server get pods"
-echo "Check services with:   kubectl -n server get svc"
-echo "Check ingress with:    kubectl -n server get ingressroute"
+echo "Check pod status with:  kubectl -n server get pods"
+echo "Check services with:    kubectl -n server get svc"
+echo "Check ingress with:     kubectl -n server get ingressroute"
+echo "Check Flux status with: flux get all"
