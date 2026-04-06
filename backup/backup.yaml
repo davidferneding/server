@@ -111,6 +111,10 @@ spec:
   jobTemplate:
     spec:
       template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: backup
+            app.kubernetes.io/part-of: server
         spec:
           containers:
             - name: backup
