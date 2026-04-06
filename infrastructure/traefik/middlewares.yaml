@@ -13,9 +13,9 @@ spec:
       enabled: true
       defaultDecisionSeconds: 60
       crowdsecMode: live
-      crowdsecAppsecEnabled: true
+      crowdsecAppsecEnabled: false
       crowdsecAppsecHost: crowdsec:7422
-      crowdsecAppsecFailureBlock: true
+      crowdsecAppsecFailureBlock: false
       crowdsecLapiKeyFile: /etc/traefik/secrets/CROWDSEC_API_KEY
       crowdsecLapiHost: crowdsec:8080
       crowdsecLapiScheme: http

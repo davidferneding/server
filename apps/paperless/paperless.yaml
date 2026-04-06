@@ -127,6 +127,8 @@ spec:
                 secretKeyRef:
                   name: paperless-secret
                   key: PAPERLESS_SECRET_KEY
+            - name: PAPERLESS_PORT
+              value: "8000"
           volumeMounts:
             - name: paperless-data
               mountPath: /usr/src/paperless/data
