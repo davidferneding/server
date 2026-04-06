@@ -115,8 +115,11 @@ managed by Traefik as the ingress controller with CrowdSec for security.
 │   │   ├── grafana.yaml                   # Deployment + Service + dashboards
 │   │   ├── ingressroute.yaml              # grafana.d-f.dev
 │   │   └── secret.example.yaml
-│   └── crowdsec/
+│   ├── crowdsec/
 │       └── crowdsec.yaml                  # Deployment + Service + PVCs
+│   └── flux/
+│       ├── source.yaml                    # GitRepository (polls repo)
+│       └── sync.yaml                      # Kustomization (reconciles cluster)
 │
 ├── apps/
 │   ├── paperless/                         # Deployment, Gotenberg, Tika, IngressRoute
@@ -173,7 +176,7 @@ Promtail → Loki
 Backup → PostgreSQL, MySQL
 ```
 
-## Image Updates (Renovate)
+## Image Updates (Renovate) & GitOps (Flux CD)
 
 [Renovate](https://docs.renovatebot.com/) is configured via `renovate.json` in
 the repo root. Install the [Renovate GitHub App](https://github.com/apps/renovate)
@@ -184,12 +187,23 @@ on this repo and it will automatically create PRs for image updates.
 - Updates are grouped by category (databases, monitoring, security)
 - Runs on weekends to avoid mid-week disruptions
 
+[Flux CD](https://fluxcd.io/) watches this repository and auto-reconciles
+the cluster whenever changes are merged to `main`. This means Renovate PRs
+that auto-merge will be deployed automatically within minutes.
+
+- Source: `infrastructure/flux/source.yaml` — polls the repo every 1 minute
+- Sync: `infrastructure/flux/sync.yaml` — reconciles every 10 minutes
+- SOPS decryption is handled natively by Flux (age key in `flux-system/sops-age` secret)
+- Run `flux get all` to check reconciliation status
+- Run `flux reconcile kustomization server` to trigger an immediate sync
+
 ## Prerequisites
 
 - **Kubernetes cluster** — [k3s](https://k3s.io) recommended for home servers
 - **kubectl** — configured to connect to your cluster
 - **Traefik CRDs** — installed (k3s includes Traefik by default)
 - **sops + age** — for secret management (`brew install sops age`)
+- **flux** — for GitOps (`brew install fluxcd/tap/flux`)
 - **DNS** — `*.d-f.dev` pointing to your cluster's external IP
 
 ## Secret Management (SOPS + age)
@@ -242,14 +256,17 @@ done
 # 2. Encrypt secrets
 ./secrets.sh encrypt
 
-# 3. Run the setup script
+# 3. Generate a deploy key for Flux
+ssh-keygen -t ed25519 -f ~/.ssh/flux_deploy_key -N ''
+# Add the public key as a deploy key in GitHub repo settings (Settings → Deploy keys)
+
+# 4. Run the setup script
 chmod +x setup.sh
 ./setup.sh
 
-# 4. Verify
+# 5. Verify
 kubectl -n server get pods
-kubectl -n server get svc
-kubectl -n server get ingressroute
+flux get all
 ```
 
 ## Operations
