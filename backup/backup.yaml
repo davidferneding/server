@@ -43,8 +43,8 @@ data:
 
     # Dump MySQL databases
     echo "Dumping MySQL databases..."
-    mysqldump -h mysql -u root -p"${MYSQL_ROOT_PASSWORD}" bootdb > "${BACKUP_DIR}/bootdb.sql"
-    mysqldump -h mysql -u root -p"${MYSQL_ROOT_PASSWORD}" --all-databases > "${BACKUP_DIR}/mysql-all.sql"
+    mysqldump --ssl-mode=DISABLED -h mysql -u root -p"${MYSQL_ROOT_PASSWORD}" bootdb > "${BACKUP_DIR}/bootdb.sql"
+    mysqldump --ssl-mode=DISABLED -h mysql -u root -p"${MYSQL_ROOT_PASSWORD}" --all-databases > "${BACKUP_DIR}/mysql-all.sql"
 
     # Copy application data
     echo "Copying application data..."
