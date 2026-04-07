@@ -44,6 +44,29 @@ spec:
             matchLabels:
               app.kubernetes.io/name: traefik
 ---
+# kube-state-metrics: allow from Prometheus
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-kube-state-metrics
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: kube-state-metrics
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 8080
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+---
 # Node Exporter: allow from Prometheus
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

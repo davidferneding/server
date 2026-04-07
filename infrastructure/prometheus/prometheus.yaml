@@ -29,6 +29,11 @@ data:
         static_configs:
           - targets: ["traefik:8082"]
 
+      # Kubernetes object metrics (pod restarts, deployment status, PVC status, etc.)
+      - job_name: "kube-state-metrics"
+        static_configs:
+          - targets: ["kube-state-metrics:8080"]
+
       # Kubernetes pod metrics via annotations
       # Add these annotations to pods to auto-scrape:
       #   prometheus.io/scrape: "true"
