@@ -56,6 +56,47 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9187"
     spec:
+      initContainers:
+        - name: pgautoupgrade
+          image: pgautoupgrade/pgautoupgrade:16-debian
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              if [ ! -f "${PGDATA}/PG_VERSION" ]; then
+                echo "Fresh database, no upgrade needed."
+                exit 0
+              fi
+
+              CURRENT_VERSION=$(cat "${PGDATA}/PG_VERSION")
+
+              if [ "${CURRENT_VERSION}" = "${PG_MAJOR}" ]; then
+                echo "Database already at v${PG_MAJOR}, skipping upgrade."
+                exit 0
+              fi
+
+              echo "Upgrading PostgreSQL from v${CURRENT_VERSION} to v${PG_MAJOR}..."
+              export PGAUTO_ONESHOT=yes
+              exec /usr/local/bin/docker-entrypoint.sh postgres
+          env:
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
       containers:
         - name: postgresql
           image: postgres:16
