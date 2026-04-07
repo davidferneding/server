@@ -44,22 +44,17 @@ managed by Traefik as the ingress controller with CrowdSec for security.
          └──────────────────────────────────────────────────────────────┘
 
          ┌──────────────────────────────────────────────────────────────┐
-         │  Monitoring & Logging                                        │
+         │  Monitoring                                                  │
          │  ┌────────────────┐  ┌────────────────┐  ┌───────────────┐  │
          │  │ Prometheus     │  │ Node Exporter  │  │ Grafana       │  │
          │  │ metrics store  │  │ (DaemonSet)    │  │ dashboards +  │  │
          │  │ 90d retention  │  │ host metrics   │  │ alerting      │  │
          │  └────────────────┘  └────────────────┘  └───────────────┘  │
-         │  ┌────────────────┐  ┌────────────────┐                     │
-         │  │ Loki           │  │ Promtail       │                     │
-         │  │ log store      │  │ (DaemonSet)    │                     │
-         │  │ 90d retention  │  │ log collector  │                     │
-         │  └────────────────┘  └────────────────┘                     │
          └──────────────────────────────────────────────────────────────┘
 
          ┌──────────────────────────────────────────────────────────────┐
          │  Backup CronJob (daily 4:00 AM)                             │
-         │  pg_dump + mysqldump → tar.gz → GPG encrypt → rclone       │
+         │  pg_dump + mariadb-dump → tar.gz → GPG encrypt → rclone       │
          └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -74,7 +69,7 @@ managed by Traefik as the ingress controller with CrowdSec for security.
 | **Security** | CrowdSec + Traefik plugin | Same, via shared log PVC |
 | **Secrets** | `.env` files | Kubernetes Secrets |
 | **Storage** | Docker volumes / bind mounts | PersistentVolumeClaims |
-| **Backup** | docker-volume-backup | CronJob with pg_dump/mysqldump + rclone |
+| **Backup** | docker-volume-backup | CronJob with pg_dump/mariadb-dump + rclone |
 | **Health** | Docker restart policies | Liveness/readiness probes + resource limits |
 
 ## Directory Structure
@@ -108,9 +103,6 @@ managed by Traefik as the ingress controller with CrowdSec for security.
 │   ├── prometheus/
 │   │   ├── prometheus.yaml                # Deployment + Service + RBAC + ConfigMap
 │   │   └── node-exporter.yaml             # DaemonSet for host metrics
-│   ├── loki/
-│   │   ├── loki.yaml                      # Deployment + Service + ConfigMap
-│   │   └── promtail.yaml                  # DaemonSet log collector + RBAC
 │   ├── grafana/
 │   │   ├── grafana.yaml                   # Deployment + Service + dashboards
 │   │   ├── ingressroute.yaml              # grafana.d-f.dev
@@ -137,7 +129,7 @@ managed by Traefik as the ingress controller with CrowdSec for security.
     ├── databases.yaml                     # PostgreSQL, MySQL, Redis access
     ├── infrastructure.yaml                # Traefik, CrowdSec, Authentik access
     ├── apps.yaml                          # App service access
-    └── monitoring.yaml                    # Prometheus, Loki, Grafana access
+    └── monitoring.yaml                    # Prometheus, Grafana, Node Exporter access
 ```
 
 ## Services & Routing
@@ -170,9 +162,8 @@ Paperless → PostgreSQL, Redis, Gotenberg, Tika
 Mealie → PostgreSQL
 Plant-it → MySQL, Redis
 Authentik → PostgreSQL, Redis
-Grafana → Prometheus, Loki
+Grafana → Prometheus
 Prometheus → node-exporter, traefik:8082, DB exporters, crowdsec:6060
-Promtail → Loki
 Backup → PostgreSQL, MySQL
 ```
 
@@ -227,7 +218,7 @@ age-keygen -o keys.txt
 **Daily workflow:**
 ```bash
 # Create secrets from templates
-for f in $(find k8s -name 'secret.example.yaml'); do
+for f in $(find . -name 'secret.example.yaml'); do
   cp "$f" "${f%.example.yaml}.yaml"
 done
 # Edit each secret.yaml with real values
@@ -293,11 +284,11 @@ kubectl -n server top pods
 
 ## Storage
 
-All persistent data uses PersistentVolumeClaims with the default StorageClass.
+Most persistent data uses PersistentVolumeClaims with the default StorageClass.
 On k3s, this is the `local-path-provisioner` which stores data on the node at
-`/var/lib/rancher/k3s/storage/`.
+`/var/lib/rancher/k3s/storage/`. Uptime Kuma uses a `hostPath` volume instead.
 
-| PVC | Size | Used By |
+| Volume | Size | Used By |
 |---|---|---|
 | `data` (StatefulSet) | 10Gi | PostgreSQL |
 | `data` (StatefulSet) | 5Gi | MySQL |
@@ -308,13 +299,12 @@ On k3s, this is the `local-path-provisioner` which stores data on the node at
 | `paperless-consume` | 1Gi | Paperless |
 | `vaultwarden-data` | 1Gi | Vaultwarden |
 | `mealie-data` | 5Gi | Mealie |
-| `uptime-kuma-data` | 2Gi | Uptime Kuma |
+| `hostPath /data/uptime-kuma` | — | Uptime Kuma |
 | `plant-it-data` | 2Gi | Plant-it |
 | `prometheus-data` | 10Gi | Prometheus (90d metrics) |
 | `grafana-data` | 2Gi | Grafana |
-| `loki-data` | 10Gi | Loki (90d logs) |
 | `traefik-acme` | 100Mi | Traefik (certificates) |
 | `traefik-logs` | 1Gi | Traefik → CrowdSec |
 | `crowdsec-data` | 2Gi | CrowdSec |
 | `crowdsec-config` | 1Gi | CrowdSec |
-| `backup-storage` | 20Gi | Backup CronJob |
+| `backup-storage` | 40Gi | Backup CronJob |
