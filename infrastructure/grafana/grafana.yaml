@@ -219,7 +219,7 @@ spec:
             - name: GF_AUTH_GENERIC_OAUTH_API_URL
               value: "http://authentik:9000/application/o/userinfo/"
             - name: GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH
-              value: "role"
+              value: "contains(groups[*], 'grafana_admins') && 'Admin' || contains(groups[*], 'grafana_editors') && 'Editor' || 'Viewer'"
             - name: GF_AUTH_GENERIC_OAUTH_AUTO_LOGIN
               value: "true"
             - name: GF_AUTH_GENERIC_OAUTH_CLIENT_ID
