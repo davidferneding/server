@@ -214,8 +214,8 @@ spec:
               persistentVolumeClaim:
                 claimName: vaultwarden-data
             - name: uptime-kuma-data
-              persistentVolumeClaim:
-                claimName: uptime-kuma-data
+              hostPath:
+                path: /data/uptime-kuma
             - name: plant-it-data
               persistentVolumeClaim:
                 claimName: plant-it-data
