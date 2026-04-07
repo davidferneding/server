@@ -86,16 +86,16 @@ spec:
                 secretKeyRef:
                   name: mealie-secret
                   key: SMTP_PASSWORD
-#            - name: OIDC_CLIENT_ID
-#              valueFrom:
-#                secretKeyRef:
-#                  name: mealie-secret
-#                  key: OIDC_CLIENT_ID
-#            - name: OIDC_CLIENT_SECRET
-#              valueFrom:
-#                secretKeyRef:
-#                  name: mealie-secret
-#                  key: OIDC_CLIENT_SECRET
+            - name: OIDC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: mealie-secret
+                  key: OIDC_CLIENT_ID
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mealie-secret
+                  key: OIDC_CLIENT_SECRET
           volumeMounts:
             - name: mealie-data
               mountPath: /app/data/
