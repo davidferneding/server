@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: authentik
-          image: ghcr.io/goauthentik/server:2025.8.6
+          image: ghcr.io/goauthentik/server:2025.10.4
           args: ["server"]
           ports:
             - containerPort: 9000
@@ -85,7 +85,7 @@ spec:
     spec:
       containers:
         - name: authentik
-          image: ghcr.io/goauthentik/server:2025.8.6
+          image: ghcr.io/goauthentik/server:2025.10.4
           args: ["worker"]
           envFrom:
             - configMapRef:
