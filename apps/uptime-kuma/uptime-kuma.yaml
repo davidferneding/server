@@ -64,8 +64,8 @@ spec:
             periodSeconds: 30
       volumes:
         - name: uptime-kuma-data
-          persistentVolumeClaim:
-            claimName: uptime-kuma-data
+          hostPath:
+            path: /data/uptime-kuma
 ---
 apiVersion: v1
 kind: Service
