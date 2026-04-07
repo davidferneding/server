@@ -58,7 +58,7 @@ spec:
     spec:
       initContainers:
         - name: pgautoupgrade
-          image: pgautoupgrade/pgautoupgrade:16-debian
+          image: pgautoupgrade/pgautoupgrade:18.2-debian
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -99,7 +99,7 @@ spec:
               memory: 1Gi
       containers:
         - name: postgresql
-          image: postgres:16
+          image: postgres:18.2
           ports:
             - containerPort: 5432
           env:
