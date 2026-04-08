@@ -58,7 +58,7 @@ spec:
     spec:
       initContainers:
         - name: pgautoupgrade
-          image: pgautoupgrade/pgautoupgrade:18.2-debian
+          image: pgautoupgrade/pgautoupgrade:18.3-debian
           command: ["/bin/sh", "-c"]
           args:
             - |
