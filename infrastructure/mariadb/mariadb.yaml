@@ -20,16 +20,21 @@ data:
     rm -f /migration/bootdb.sql
 
     attempt=0
-    until mariadb-admin ping --host="${LEGACY_MYSQL_HOST}" --protocol=tcp --user=root --password="${LEGACY_MYSQL_ROOT_PASSWORD}" --silent; do
+    last_error=""
+    until mariadb-admin ping --ssl=0 --host="${LEGACY_MYSQL_HOST}" --protocol=tcp --user=root --password="${LEGACY_MYSQL_ROOT_PASSWORD}" --silent 2>/tmp/legacy-mysql-ping.err; do
+      last_error=$(cat /tmp/legacy-mysql-ping.err 2>/dev/null || true)
       attempt=$((attempt + 1))
       if [ "${attempt}" -ge 60 ]; then
         echo "Legacy MySQL did not become reachable in time."
+        if [ -n "${last_error}" ]; then
+          echo "Last connection error: ${last_error}"
+        fi
         exit 1
       fi
       sleep 2
     done
 
-    if ! mariadb --host="${LEGACY_MYSQL_HOST}" --protocol=tcp --user=root --password="${LEGACY_MYSQL_ROOT_PASSWORD}" --skip-column-names --execute="SHOW DATABASES LIKE 'bootdb'" | grep -q '^bootdb$'; then
+    if ! mariadb --ssl=0 --host="${LEGACY_MYSQL_HOST}" --protocol=tcp --user=root --password="${LEGACY_MYSQL_ROOT_PASSWORD}" --skip-column-names --execute="SHOW DATABASES LIKE 'bootdb'" | grep -q '^bootdb$'; then
       echo "bootdb not found on legacy MySQL; skipping automatic import."
       exit 0
     fi
