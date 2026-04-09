@@ -32,7 +32,6 @@ data:
   USERS_LIMIT: "-1"
   UPLOAD_DIR: "/upload-dir"
   API_PORT: "8080"
-  FLORACODEX_KEY: ""
   LOG_LEVEL: "DEBUG"
   ALLOWED_ORIGINS: "*"
   CACHE_TTL: "86400"
@@ -82,6 +81,11 @@ spec:
                 secretKeyRef:
                   name: plant-it-secret
                   key: JWT_SECRET
+            - name: FLORACODEX_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: plant-it-secret
+                  key: FLORACODEX_KEY
           volumeMounts:
             - name: plant-it-data
               mountPath: /upload-dir
