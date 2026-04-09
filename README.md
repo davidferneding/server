@@ -37,7 +37,7 @@ managed by Traefik as the ingress controller with CrowdSec for security.
          ┌────────────▼────────────▼────────▼───────▼─────────────────▼──┐
          │                     Shared Infrastructure                     │
          │  ┌──────────────┐  ┌──────────┐  ┌───────┐  ┌─────────────┐  │
-         │  │ PostgreSQL   │  │  MySQL   │  │ Redis │  │  CrowdSec   │  │
+         │  │ PostgreSQL   │  │ MariaDB  │  │ Redis │  │  CrowdSec   │  │
          │  │ • paperless  │  │ • bootdb │  │       │  │  (Security) │  │
          │  │ • mealie     │  │(plant-it)│  │       │  │             │  │
          │  └──────────────┘  └──────────┘  └───────┘  └─────────────┘  │
@@ -62,7 +62,7 @@ managed by Traefik as the ingress controller with CrowdSec for security.
 
 | Aspect | Docker Compose | Kubernetes |
 |---|---|---|
-| **Databases** | 2× PostgreSQL + 1× MySQL | 1× PostgreSQL (shared) + 1× MySQL |
+| **Databases** | 2× PostgreSQL + 1× MySQL | 1× PostgreSQL (shared) + 1× MariaDB |
 | **Redis** | 2× Redis (paperless + plant-it) | 1× shared Redis instance |
 | **Ingress** | Traefik container + dynamic config file | Traefik Deployment + IngressRoute CRDs |
 | **TLS** | Traefik ACME (file-based) | Traefik ACME (PVC-based) |
@@ -83,8 +83,8 @@ managed by Traefik as the ingress controller with CrowdSec for security.
 │   ├── postgresql/
 │   │   ├── postgresql.yaml                # StatefulSet + Service + init ConfigMap
 │   │   └── secret.example.yaml
-│   ├── mysql/
-│   │   ├── mysql.yaml                     # StatefulSet + Service
+│   ├── mariadb/
+│   │   ├── mariadb.yaml                   # StatefulSet + Service
 │   │   └── secret.example.yaml
 │   ├── redis/
 │   │   └── redis.yaml                     # Deployment + Service + PVC
@@ -126,7 +126,7 @@ managed by Traefik as the ingress controller with CrowdSec for security.
 │
 └── policies/
     ├── default-deny.yaml                  # Deny all ingress by default
-    ├── databases.yaml                     # PostgreSQL, MySQL, Redis access
+    ├── databases.yaml                     # PostgreSQL, MariaDB, Redis access
     ├── infrastructure.yaml                # Traefik, CrowdSec, Authentik access
     ├── apps.yaml                          # App service access
     └── monitoring.yaml                    # Prometheus, Grafana, Node Exporter access
@@ -160,11 +160,11 @@ Internet → Traefik (:443)
 
 Paperless → PostgreSQL, Redis, Gotenberg, Tika
 Mealie → PostgreSQL
-Plant-it → MySQL, Redis
+Plant-it → MariaDB, Redis
 Authentik → PostgreSQL, Redis
 Grafana → Prometheus
 Prometheus → node-exporter, traefik:8082, DB exporters, crowdsec:6060
-Backup → PostgreSQL, MySQL
+Backup → PostgreSQL, MariaDB
 ```
 
 ## Image Updates (Renovate) & GitOps (Flux CD)
@@ -291,7 +291,7 @@ On k3s, this is the `local-path-provisioner` which stores data on the node at
 | Volume | Size | Used By |
 |---|---|---|
 | `data` (StatefulSet) | 10Gi | PostgreSQL |
-| `data` (StatefulSet) | 5Gi | MySQL |
+| `data` (StatefulSet) | 5Gi | MariaDB |
 | `redis-data` | 1Gi | Redis |
 | `paperless-data` | 5Gi | Paperless |
 | `paperless-media` | 10Gi | Paperless |

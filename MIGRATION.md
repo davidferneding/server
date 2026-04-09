@@ -24,11 +24,11 @@ the Kubernetes setup in this directory.
 │                        AFTER (Kubernetes)                            │
 │                                                                     │
 │  postgresql (PG) ────┐  ← 1 shared PostgreSQL (paperless + mealie)  │
-│  mysql       (MySQL) ┤  ← 1 MySQL (plant-it)                       │
-│  redis       ────────┘  ← 1 shared Redis                           │
+│  mariadb     (MariaDB)┤ ← 1 MariaDB (plant-it)                      │
+│  redis       ─────────┘ ← 1 shared Redis                            │
 │                                                                     │
 │  traefik ← IngressRoute CRDs + K8s Secrets                         │
-│  backup CronJob ← pg_dump/mysqldump, no downtime                   │
+│  backup CronJob ← pg_dump/mariadb-dump, no downtime                │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -68,7 +68,7 @@ done
 | File | Keys |
 |---|---|
 | `infrastructure/postgresql/secret.yaml` | `POSTGRES_PASSWORD`, `PAPERLESS_DB_PASSWORD`, `MEALIE_DB_PASSWORD` |
-| `infrastructure/mysql/secret.yaml` | `MYSQL_ROOT_PASSWORD` |
+| `infrastructure/mariadb/secret.yaml` | `MARIADB_ROOT_PASSWORD` |
 | `infrastructure/traefik/secret.yaml` | `PORKBUN_API_KEY`, `PORKBUN_SECRET_API_KEY`, `CROWDSEC_API_KEY` |
 | `apps/paperless/secret.yaml` | `PAPERLESS_SECRET_KEY` |
 | `apps/mealie/secret.yaml` | `SMTP_PASSWORD` |
@@ -119,17 +119,17 @@ kubectl apply -f https://raw.githubusercontent.com/traefik/traefik/v3.0/docs/con
 # Create namespace and secrets
 kubectl apply -f namespace.yaml
 kubectl apply -f infrastructure/postgresql/secret.yaml
-kubectl apply -f infrastructure/mysql/secret.yaml
+kubectl apply -f infrastructure/mariadb/secret.yaml
 kubectl apply -f infrastructure/traefik/secret.yaml
 
 # Deploy databases
 kubectl apply -f infrastructure/postgresql/postgresql.yaml
-kubectl apply -f infrastructure/mysql/mysql.yaml
+kubectl apply -f infrastructure/mariadb/mariadb.yaml
 kubectl apply -f infrastructure/redis/redis.yaml
 
 # Wait for databases
 kubectl -n server wait --for=condition=ready pod -l app.kubernetes.io/name=postgresql --timeout=120s
-kubectl -n server wait --for=condition=ready pod -l app.kubernetes.io/name=mysql --timeout=120s
+kubectl -n server wait --for=condition=ready pod -l app.kubernetes.io/name=mariadb --timeout=120s
 ```
 
 ### Phase 4: Restore Data
@@ -144,11 +144,11 @@ kubectl -n server cp /tmp/mealie.sql postgresql-0:/tmp/mealie.sql
 kubectl -n server exec postgresql-0 -- \
   psql -U mealie -d mealie -f /tmp/mealie.sql
 
-# Restore MySQL data
-MYSQL_POD=$(kubectl -n server get pod -l app.kubernetes.io/name=mysql -o jsonpath='{.items[0].metadata.name}')
-kubectl -n server cp /tmp/bootdb.sql ${MYSQL_POD}:/tmp/bootdb.sql
-kubectl -n server exec ${MYSQL_POD} -- \
-  mysql -u root -p"$(kubectl -n server get secret mysql-secret -o jsonpath='{.data.MYSQL_ROOT_PASSWORD}' | base64 -d)" bootdb < /tmp/bootdb.sql
+# Restore MariaDB data
+MARIADB_POD=$(kubectl -n server get pod -l app.kubernetes.io/name=mariadb -o jsonpath='{.items[0].metadata.name}')
+kubectl -n server cp /tmp/bootdb.sql ${MARIADB_POD}:/tmp/bootdb.sql
+kubectl -n server exec ${MARIADB_POD} -- \
+  mariadb -u root -p"$(kubectl -n server get secret mariadb-secret -o jsonpath='{.data.MARIADB_ROOT_PASSWORD}' | base64 -d)" bootdb < /tmp/bootdb.sql
 ```
 
 **Restore file-based data** (method depends on your StorageClass):
@@ -251,7 +251,7 @@ kubectl delete clusterrolebinding traefik-role-binding
 ### Database Consolidation
 
 **Before:** 2 PostgreSQL instances (paperless-db, mealie-db) + 1 MySQL (plant-it-db)
-**After:** 1 PostgreSQL instance with 2 databases + 1 MySQL instance
+**After:** 1 PostgreSQL instance with 2 databases + 1 MariaDB instance
 
 The shared PostgreSQL uses an init script (`init-databases.sh`) that creates
 both `paperless` and `mealie` databases with separate users on first boot.
@@ -269,7 +269,7 @@ unlikely due to application-specific prefixes.
 **Before:** `docker-volume-backup` stops containers, copies Docker volumes, encrypts,
 uploads to Dropbox.
 
-**After:** Kubernetes CronJob runs `pg_dump`/`mysqldump` (no downtime) and copies
+**After:** Kubernetes CronJob runs `pg_dump`/`mariadb-dump` (no downtime) and copies
 file-based PVC data. Same GPG encryption, uploaded via rclone (currently Dropbox,
 easily switchable to Backblaze B2 or any other provider).
 

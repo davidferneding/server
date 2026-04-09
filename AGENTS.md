@@ -29,6 +29,11 @@ kubectl -n server describe pod <pod>
 
 No build/test/lint commands — this is pure YAML configuration.
 
+### Local Development Constraints
+- Work happens from a local machine; do not assume direct access to the live cluster or server filesystem
+- Do not run `setup.sh` during normal config changes; Flux applies committed manifests to the cluster
+- Only suggest or run cluster commands (`kubectl`, `flux`) when the user explicitly has cluster access and wants operational debugging
+
 ---
 
 ## Mandatory Rules for Every Change
@@ -77,6 +82,8 @@ Network policies use `app.kubernetes.io/name` for pod selectors — consistency 
 ### Secrets
 - Files matching `.*secret\.yaml$` are SOPS-encrypted with age (see `.sops.yaml`)
 - `secret.example.yaml` = template (unencrypted, committed), copy to `secret.yaml` and fill values
+- The user manages real secret files manually; do not read, edit, or create `secret.yaml` files during normal changes
+- When a manifest needs a new secret or key, create or update the matching `secret.example.yaml` instead and reference the secret in the manifest
 - The `secrets.sh encrypt` command is idempotent — it skips already-encrypted files
 - Flux decrypts secrets automatically using the `sops-age` secret in `flux-system`
 - **Never commit a decrypted `secret.yaml`** — run `./secrets.sh status` to verify before pushing
@@ -88,7 +95,7 @@ All non-sensitive env vars go in a `ConfigMap`, referenced via `envFrom.configMa
 Every container has `resources.requests` and `resources.limits`. Match the pattern of neighboring services when adding a new container.
 
 ### Health probes
-Every container has both `readinessProbe` and `livenessProbe`. Databases use `exec` (pg_isready / mysqladmin ping). HTTP services use `httpGet`.
+Every container has both `readinessProbe` and `livenessProbe`. Databases use `exec` (pg_isready / mariadb-admin ping). HTTP services use `httpGet`.
 
 ---
 
@@ -101,9 +108,9 @@ Every container has both `readinessProbe` and `livenessProbe`. Databases use `ex
 
 All three databases and users are created by the init script in `infrastructure/postgresql/postgresql.yaml` (ConfigMap `postgresql-init`). To add another database, add a block to that init script **and** add the password to `postgresql-secret`.
 
-**MySQL** (`StatefulSet: mysql`, `Service: mysql:3306`) hosts:
+**MariaDB** (`StatefulSet: mariadb`, `Service: mariadb:3306`) hosts:
 - `bootdb` — used by plant-it (root user)
-- Started with `--mysql-native-password` arg — required for plant-it compatibility
+- Uses `mariadb-secret` for the root password
 
 **Single shared Redis** (`Deployment: redis`, `Service: redis:6379`):
 - paperless: DB 0 (default)
@@ -165,9 +172,9 @@ Retention: 90 days for both Prometheus and Loki.
 
 ## Backup
 
-CronJob runs daily at `0 4 * * *` (4 AM). Uses an ephemeral `alpine:3.21` container that installs tools at startup (`apk add postgresql16-client mysql-client gnupg rclone`).
+CronJob runs daily at `0 4 * * *` (4 AM). Uses an ephemeral `alpine:3.23` container that installs tools at startup (`apk add postgresql18-client mariadb-client gnupg rclone`).
 
-Backup flow: `pg_dump` + `mariadb-dump` (not `mysqldump`) → tar.gz → GPG encrypt (AES256) → rclone upload → cleanup old backups.
+Backup flow: `pg_dump` + `mariadb-dump` → tar.gz → GPG encrypt (AES256) → rclone upload → cleanup old backups.
 
 **Excluded from backup** intentionally: Loki (`loki-data`) and Prometheus (`prometheus-data`) — too large, regenerable.
 
@@ -194,7 +201,7 @@ Flux watches the entire repo root (`.`). Everything in `kustomization.yaml` gets
 ## Renovate
 
 Auto-merges patch and minor updates on weekends. **Does NOT auto-merge:**
-- Databases (`postgres`, `mysql`, `redis`) — grouped, manual review
+- Databases (`postgres`, `mariadb`, `redis`) — grouped, manual review
 - Security (`crowdsec`, `authentik`) — grouped, manual review
 - `vaultwarden/server` — any update requires manual review
 
@@ -225,7 +232,7 @@ The init container only has `POSTGRES_USER`, `PGDATA`, and `POSTGRES_PASSWORD` �
 - **The `server` namespace has `app.kubernetes.io/part-of: server` label** — some selectors and policies may rely on namespace labels.
 - **PostgreSQL `PGDATA` is set to `/var/lib/postgresql/data/pgdata`** (a subdirectory) — this is to avoid a known issue with PostgreSQL complaining about a non-empty data directory when using PVCs.
 - **Authentik has two Deployments** (`authentik-server` + `authentik-worker`) sharing the same ConfigMap and image, but with different `args` (`server` vs `worker`). The `authentik` Service only selects `component: server`.
-- **MySQL uses `root` user for everything** — plant-it connects as root, and mysqld-exporter also uses root credentials.
+- **MariaDB uses `root` user for everything** — plant-it connects as root, and mysqld-exporter also uses root credentials.
 - **Redis has no password** — it's protected only by network policy, not authentication.
 - **The `shorty` middleware links are hardcoded in `middlewares.yaml`** — to add a short link, add to the `spec.plugin.shorty.links` map and commit.
 - **CrowdSec AppSec is disabled** (`crowdsecAppsecEnabled: false`) in the middleware config, even though the AppSec port (7422) is listed in the CrowdSec Service and the CrowdSec container loads AppSec collections.
