@@ -43,8 +43,8 @@ data:
 
     # Dump MariaDB databases
     echo "Dumping MariaDB databases..."
-    mariadb-dump --ssl=0 -h mariadb -u root -p"${MYSQL_ROOT_PASSWORD}" bootdb > "${BACKUP_DIR}/bootdb.sql"
-    mariadb-dump --ssl=0 -h mariadb -u root -p"${MYSQL_ROOT_PASSWORD}" --all-databases > "${BACKUP_DIR}/mariadb-all.sql"
+    mariadb-dump --ssl=0 -h mariadb -u root -p"${MARIADB_ROOT_PASSWORD}" bootdb > "${BACKUP_DIR}/bootdb.sql"
+    mariadb-dump --ssl=0 -h mariadb -u root -p"${MARIADB_ROOT_PASSWORD}" --all-databases > "${BACKUP_DIR}/mariadb-all.sql"
 
     # Copy application data
     echo "Copying application data..."
@@ -122,18 +122,18 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - apk add --no-cache postgresql18-client mysql-client gnupg rclone && /scripts/backup.sh
+                - apk add --no-cache postgresql18-client mariadb-client gnupg rclone && /scripts/backup.sh
               env:
                 - name: POSTGRES_PASSWORD
                   valueFrom:
                     secretKeyRef:
                       name: postgresql-secret
                       key: POSTGRES_PASSWORD
-                - name: MYSQL_ROOT_PASSWORD
+                - name: MARIADB_ROOT_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: mysql-secret
-                      key: MYSQL_ROOT_PASSWORD
+                      name: mariadb-secret
+                      key: MARIADB_ROOT_PASSWORD
                 - name: GPG_PASSPHRASE
                   valueFrom:
                     secretKeyRef:

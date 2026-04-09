@@ -24,10 +24,6 @@ spec:
       namespace: server
     - apiVersion: apps/v1
       kind: StatefulSet
-      name: mysql
-      namespace: server
-    - apiVersion: apps/v1
-      kind: StatefulSet
       name: mariadb
       namespace: server
     - apiVersion: apps/v1

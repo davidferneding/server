@@ -75,8 +75,8 @@ spec:
             - name: MYSQL_PSW
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
-                  key: MYSQL_ROOT_PASSWORD
+                  name: mariadb-secret
+                  key: MARIADB_ROOT_PASSWORD
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:

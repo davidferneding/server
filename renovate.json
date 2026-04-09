@@ -46,11 +46,6 @@
       "description": "Pin digest for critical services",
       "matchPackageNames": ["vaultwarden/server"],
       "automerge": false
-    },
-    {
-      "description": "Don't update mysql",
-      "matchPackageNames": ["/mysql/"],
-      "enabled": false
     }
   ]
 }
