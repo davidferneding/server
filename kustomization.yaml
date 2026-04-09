@@ -13,6 +13,7 @@ resources:
   - infrastructure/postgresql/postgresql.yaml
   - infrastructure/mysql/secret.yaml
   - infrastructure/mysql/mysql.yaml
+  - infrastructure/mariadb/mariadb.yaml
   - infrastructure/redis/redis.yaml
 
   # Infrastructure - Networking & Security

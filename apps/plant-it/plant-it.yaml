@@ -24,7 +24,7 @@ metadata:
     app.kubernetes.io/component: config
     app.kubernetes.io/part-of: server
 data:
-  MYSQL_HOST: "mysql"
+  MYSQL_HOST: "mariadb"
   MYSQL_PORT: "3306"
   MYSQL_USERNAME: "root"
   MYSQL_DATABASE: "bootdb"

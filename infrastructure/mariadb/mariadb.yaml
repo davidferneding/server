@@ -1,0 +1,194 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mariadb-init
+  namespace: server
+  labels:
+    app.kubernetes.io/name: mariadb
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: server
+data:
+  10-dump-legacy-mysql.sh: |
+    #!/bin/sh
+    set -eu
+
+    if [ -d /var/lib/mysql/mysql ]; then
+      echo "MariaDB data directory already initialized; skipping legacy dump."
+      exit 0
+    fi
+
+    rm -f /migration/bootdb.sql
+
+    attempt=0
+    until mariadb-admin ping --host="${LEGACY_MYSQL_HOST}" --protocol=tcp --user=root --password="${LEGACY_MYSQL_ROOT_PASSWORD}" --silent; do
+      attempt=$((attempt + 1))
+      if [ "${attempt}" -ge 60 ]; then
+        echo "Legacy MySQL did not become reachable in time."
+        exit 1
+      fi
+      sleep 2
+    done
+
+    if ! mariadb --host="${LEGACY_MYSQL_HOST}" --protocol=tcp --user=root --password="${LEGACY_MYSQL_ROOT_PASSWORD}" --skip-column-names --execute="SHOW DATABASES LIKE 'bootdb'" | grep -q '^bootdb$'; then
+      echo "bootdb not found on legacy MySQL; skipping automatic import."
+      exit 0
+    fi
+
+    mariadb-dump --ssl=0 --host="${LEGACY_MYSQL_HOST}" --protocol=tcp --user=root --password="${LEGACY_MYSQL_ROOT_PASSWORD}" --single-transaction --quick --routines --events --databases bootdb > /migration/bootdb.sql
+  20-import-legacy-mysql.sh: |
+    #!/bin/sh
+    set -eu
+
+    if [ ! -s /migration/bootdb.sql ]; then
+      echo "No legacy MySQL dump prepared; skipping automatic import."
+      exit 0
+    fi
+
+    mariadb --user=root --password="${MARIADB_ROOT_PASSWORD}" < /migration/bootdb.sql
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mariadb
+  namespace: server
+  labels:
+    app.kubernetes.io/name: mariadb
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: server
+spec:
+  serviceName: mariadb
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mariadb
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mariadb
+        app.kubernetes.io/component: database
+        app.kubernetes.io/part-of: server
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9104"
+    spec:
+      initContainers:
+        - name: dump-legacy-mysql
+          image: mariadb:12.2.2
+          command:
+            - /bin/sh
+            - /scripts/10-dump-legacy-mysql.sh
+          env:
+            - name: LEGACY_MYSQL_HOST
+              value: "mysql"
+            - name: LEGACY_MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+            - name: migration
+              mountPath: /migration
+            - name: init-scripts
+              mountPath: /scripts
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      containers:
+        - name: mariadb
+          image: mariadb:12.2.2
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MARIADB_DATABASE
+              value: "bootdb"
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+            - name: migration
+              mountPath: /migration
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            exec:
+              command: ["mariadb-admin", "ping", "-h", "localhost"]
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["mariadb-admin", "ping", "-h", "localhost"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+        - name: mysqld-exporter
+          image: prom/mysqld-exporter:v0.19.0
+          ports:
+            - containerPort: 9104
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQLD_EXPORTER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+          args:
+            - "--mysqld.address=localhost:3306"
+            - "--mysqld.username=root"
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      volumes:
+        - name: migration
+          emptyDir: {}
+        - name: init-scripts
+          configMap:
+            name: mariadb-init
+            defaultMode: 0755
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+  namespace: server
+  labels:
+    app.kubernetes.io/name: mariadb
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: server
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: mariadb
+  ports:
+    - port: 3306
+      targetPort: 3306

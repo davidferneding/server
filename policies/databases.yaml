@@ -37,7 +37,7 @@ spec:
             matchLabels:
               app.kubernetes.io/name: prometheus
 ---
-# MySQL: allow from plant-it, backup, mysqld-exporter scrape
+# MySQL: allow from MariaDB during first-start migration and Prometheus scraping
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -50,6 +50,35 @@ spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/name: mysql
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 3306
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: mariadb
+    - ports:
+        - port: 9104
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+---
+# MariaDB: allow from plant-it, backup, mysqld-exporter scrape
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-mariadb
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: mariadb
   policyTypes:
     - Ingress
   ingress:

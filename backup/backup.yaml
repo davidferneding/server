@@ -41,10 +41,10 @@ data:
     PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump -h postgresql -U postgres -d authentik > "${BACKUP_DIR}/authentik.sql"
     PGPASSWORD="${POSTGRES_PASSWORD}" pg_dumpall -h postgresql -U postgres > "${BACKUP_DIR}/postgres-all.sql"
 
-    # Dump MySQL databases
-    echo "Dumping MySQL databases..."
-    mariadb-dump --ssl=0 -h mysql -u root -p"${MYSQL_ROOT_PASSWORD}" bootdb > "${BACKUP_DIR}/bootdb.sql"
-    mariadb-dump --ssl=0 -h mysql -u root -p"${MYSQL_ROOT_PASSWORD}" --all-databases > "${BACKUP_DIR}/mysql-all.sql"
+    # Dump MariaDB databases
+    echo "Dumping MariaDB databases..."
+    mariadb-dump --ssl=0 -h mariadb -u root -p"${MYSQL_ROOT_PASSWORD}" bootdb > "${BACKUP_DIR}/bootdb.sql"
+    mariadb-dump --ssl=0 -h mariadb -u root -p"${MYSQL_ROOT_PASSWORD}" --all-databases > "${BACKUP_DIR}/mariadb-all.sql"
 
     # Copy application data
     echo "Copying application data..."

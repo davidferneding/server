@@ -72,11 +72,13 @@ echo ""
 echo "Step 4: Deploying infrastructure..."
 kubectl apply -f infrastructure/postgresql/postgresql.yaml
 kubectl apply -f infrastructure/mysql/mysql.yaml
+kubectl apply -f infrastructure/mariadb/mariadb.yaml
 kubectl apply -f infrastructure/redis/redis.yaml
 
 echo "Waiting for databases to be ready..."
 kubectl -n server wait --for=condition=ready pod -l app.kubernetes.io/name=postgresql --timeout=120s
 kubectl -n server wait --for=condition=ready pod -l app.kubernetes.io/name=mysql --timeout=120s
+kubectl -n server wait --for=condition=ready pod -l app.kubernetes.io/name=mariadb --timeout=120s
 kubectl -n server wait --for=condition=ready pod -l app.kubernetes.io/name=redis --timeout=60s
 
 # Step 5: Deploy networking
