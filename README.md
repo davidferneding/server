@@ -121,7 +121,8 @@ managed by Traefik as the ingress controller with CrowdSec for security.
 │   ├── vaultwarden/                       # Deployment, IngressRoute
 │   ├── mealie/                            # Deployment, IngressRoute
 │   ├── uptime-kuma/                       # Deployment, IngressRoute
-│   └── plant-it/                          # Deployment, IngressRoute
+│   ├── plant-it/                          # Deployment, IngressRoute
+│   └── home-assistant/                    # Deployment, IngressRoute
 │
 ├── backup/
 │   ├── backup.yaml                        # CronJob + backup script ConfigMap
@@ -145,6 +146,7 @@ managed by Traefik as the ingress controller with CrowdSec for security.
 | `uptime.d-f.dev` | uptime-kuma | 3001 |
 | `status.d-f.dev` | uptime-kuma | 3001 (redirects `/` → `/status/`) |
 | `plants.d-f.dev` | plant-it | 3000 (frontend), 8080 (API) |
+| `home.d-f.dev` | home-assistant | 8123 |
 | `auth.d-f.dev` | authentik | 9000 |
 | `headscale.d-f.dev` | headscale | 8080 |
 | `grafana.d-f.dev` | grafana | 3000 |
@@ -159,7 +161,7 @@ All ingress traffic is denied by default. Each service has explicit policies:
 
 ```
 Internet → Traefik (:443)
-  Traefik → apps (paperless, vaultwarden, mealie, uptime-kuma, plant-it)
+  Traefik → apps (paperless, vaultwarden, mealie, uptime-kuma, plant-it, home-assistant)
   Traefik → infrastructure (authentik, headscale, grafana, crowdsec)
 
 Paperless → PostgreSQL, Redis, Gotenberg, Tika
@@ -274,10 +276,11 @@ Run these from a machine that already has `kubectl` access to the cluster:
 
 ```bash
 kubectl -n server exec deploy/headscale -- headscale users create home
-kubectl -n server exec deploy/headscale -- headscale preauthkeys create --user home --reusable --expiration 24h
+kubectl -n server exec deploy/headscale -- headscale users list
+kubectl -n server exec deploy/headscale -- headscale preauthkeys create --user <numeric-user-id> --reusable
 ```
 
-Save the generated auth key. You will use it for both the hosted server and the Pi.
+If `home` already exists, do not recreate it; just use its numeric ID from `headscale users list` when creating the key. Save the generated auth key. You will use it for both the hosted server and the Pi.
 
 ### 2. Join the hosted server to Headscale
 
@@ -321,17 +324,26 @@ Then run the quickstart script on the Pi as root. It will prompt for the Headsca
 sudo ./pi_agent_quickstart.sh
 ```
 
-The script hardcodes these cluster-specific settings:
+If the script reports that it enabled memory cgroups in `/boot/firmware/cmdline.txt` or `/boot/cmdline.txt`, reboot the Pi once and run the script again. That Raspberry Pi OS kernel setting is required before `k3s-agent` can start.
+
+The script hardcodes these cluster-specific settings and discovers the Pi's Tailscale IPv4 address automatically for the node registration:
 
 ```yaml
 login-server: https://headscale.d-f.dev
+node-ip: <detected tailscale IPv4>
+node-external-ip: <detected tailscale IPv4>
+flannel-iface: tailscale0
+kubelet-arg:
+  - node-ip=<detected tailscale IPv4>
 node-label:
   - server.d-f.dev/node-role=pi
 node-taint:
   - server.d-f.dev/node-role=pi:NoSchedule
 ```
 
-Normal workloads will avoid the Pi automatically because of the taint. Pi-only workloads should add both a selector and a matching toleration, as shown in `apps/pi-demo/pi-demo.yaml`.
+If `kubectl logs`, `kubectl exec`, or ingress traffic to Pi-hosted apps fails, rerun `sudo ./pi_agent_quickstart.sh` on the Pi or update `/etc/rancher/k3s/config.yaml` there so `node-ip`, `node-external-ip`, and `kubelet-arg: node-ip=...` all use the detected Tailscale IPv4, then restart `k3s-agent`. From the hosted server, verify kubelet reachability with `curl -sk https://<pi-tailscale-ip>:10250/healthz`.
+
+Normal workloads will avoid the Pi automatically because of the taint. Pi-only workloads should add both a selector and a matching toleration, as shown in `apps/pi-health/pi-health.yaml`.
 
 ## Operations
 
@@ -374,6 +386,7 @@ On k3s, this is the `local-path-provisioner` which stores data on the node at
 | `mealie-data` | 5Gi | Mealie |
 | `hostPath /data/uptime-kuma` | — | Uptime Kuma |
 | `plant-it-data` | 2Gi | Plant-it |
+| `home-assistant-data` | 5Gi | Home Assistant |
 | `prometheus-data` | 10Gi | Prometheus (90d metrics) |
 | `grafana-data` | 2Gi | Grafana |
 | `traefik-acme` | 100Mi | Traefik (certificates) |

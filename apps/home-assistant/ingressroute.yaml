@@ -1,21 +1,21 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: pi-demo
+  name: home-assistant
   namespace: server
   labels:
-    app.kubernetes.io/name: pi-demo
+    app.kubernetes.io/name: home-assistant
     app.kubernetes.io/component: ingress
     app.kubernetes.io/part-of: server
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: "Host(`pi-demo.d-f.dev`)"
+    - match: "Host(`home.d-f.dev`)"
       kind: Rule
       services:
-        - name: pi-demo
-          port: 8080
+        - name: home-assistant
+          port: 8123
       middlewares:
         - name: crowdsec
           namespace: server

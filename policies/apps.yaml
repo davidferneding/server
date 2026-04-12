@@ -160,11 +160,11 @@ spec:
             matchLabels:
               app.kubernetes.io/name: traefik
 ---
-# Pi demo: allow from Traefik
+# Home Assistant: allow from Traefik
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-pi-demo
+  name: allow-home-assistant
   namespace: server
   labels:
     app.kubernetes.io/component: policy
@@ -172,13 +172,14 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: pi-demo
+      app.kubernetes.io/name: home-assistant
   policyTypes:
     - Ingress
   ingress:
     - ports:
-        - port: 8080
+        - port: 8123
       from:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: traefik
+---

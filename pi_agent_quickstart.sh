@@ -16,6 +16,35 @@ apt-get update
 apt-get install -y curl ca-certificates
 update-ca-certificates
 
+enable_memory_cgroup() {
+  if [ -f /sys/fs/cgroup/cgroup.controllers ] && grep -qw memory /sys/fs/cgroup/cgroup.controllers; then
+    return
+  fi
+
+  if [ -f /proc/cgroups ] && awk '$1 == "memory" && $4 == "1" { found = 1 } END { exit(found ? 0 : 1) }' /proc/cgroups; then
+    return
+  fi
+
+  cmdline_file=""
+  if [ -f /boot/firmware/cmdline.txt ]; then
+    cmdline_file="/boot/firmware/cmdline.txt"
+  elif [ -f /boot/cmdline.txt ]; then
+    cmdline_file="/boot/cmdline.txt"
+  fi
+
+  if [ -n "$cmdline_file" ] && ! grep -q "cgroup_enable=memory" "$cmdline_file"; then
+    cp "$cmdline_file" "${cmdline_file}.bak"
+    sed -i '1 s#$# cgroup_enable=memory cgroup_memory=1#' "$cmdline_file"
+    echo "Enabled memory cgroups in ${cmdline_file}. Reboot the Pi, then rerun this script."
+    exit 1
+  fi
+
+  echo "Memory cgroups are required for k3s. Add cgroup_enable=memory cgroup_memory=1 to /boot/firmware/cmdline.txt (or /boot/cmdline.txt), reboot, then rerun this script."
+  exit 1
+}
+
+enable_memory_cgroup
+
 curl -fsSL https://tailscale.com/install.sh | sh
 systemctl enable --now tailscaled
 
@@ -28,6 +57,12 @@ if [ -z "$headscale_auth_key" ]; then
 fi
 
 tailscale up --login-server=https://headscale.d-f.dev --authkey="$headscale_auth_key"
+
+tailscale_ip="$(tailscale ip -4 | head -n1)"
+if [ -z "$tailscale_ip" ]; then
+  echo "Could not determine the Pi's Tailscale IPv4 address."
+  exit 1
+fi
 
 read -r -p "k3s server Tailscale IP or DNS name: " k3s_server
 echo
@@ -50,6 +85,11 @@ install -d -m 0755 /etc/rancher/k3s
 cat >/etc/rancher/k3s/config.yaml <<EOF
 server: https://${k3s_server}:6443
 token: ${token}
+node-ip: ${tailscale_ip}
+node-external-ip: ${tailscale_ip}
+flannel-iface: tailscale0
+kubelet-arg:
+  - node-ip=${tailscale_ip}
 node-label:
   - server.d-f.dev/node-role=pi
 node-taint:
@@ -63,4 +103,4 @@ systemctl enable k3s-agent
 systemctl restart k3s-agent
 systemctl is-active --quiet k3s-agent
 
-echo "Pi Tailscale and k3s agent configured. Both reconnect automatically on boot via tailscaled and k3s-agent."
+echo "Pi Tailscale and k3s agent configured with Tailscale node IPs. Both reconnect automatically on boot via tailscaled and k3s-agent."

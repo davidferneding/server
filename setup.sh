@@ -134,6 +134,8 @@ kubectl apply -f apps/uptime-kuma/uptime-kuma.yaml
 kubectl apply -f apps/uptime-kuma/ingressroute.yaml
 kubectl apply -f apps/plant-it/plant-it.yaml
 kubectl apply -f apps/plant-it/ingressroute.yaml
+kubectl apply -f apps/home-assistant/home-assistant.yaml
+kubectl apply -f apps/home-assistant/ingressroute.yaml
 
 # Step 9: Deploy backup
 echo ""

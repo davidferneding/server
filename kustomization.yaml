@@ -56,8 +56,8 @@ resources:
   - apps/plant-it/secret.yaml
   - apps/plant-it/plant-it.yaml
   - apps/plant-it/ingressroute.yaml
-  - apps/pi-demo/pi-demo.yaml
-  - apps/pi-demo/ingressroute.yaml
+  - apps/home-assistant/home-assistant.yaml
+  - apps/home-assistant/ingressroute.yaml
 
   # Backup
   - backup/secret.yaml

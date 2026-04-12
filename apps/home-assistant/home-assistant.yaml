@@ -1,0 +1,137 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: home-assistant-data
+  namespace: server
+  labels:
+    app.kubernetes.io/name: home-assistant
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: server
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: home-assistant-bootstrap
+  namespace: server
+  labels:
+    app.kubernetes.io/name: home-assistant
+    app.kubernetes.io/component: config
+    app.kubernetes.io/part-of: server
+data:
+  configuration.yaml: |
+    default_config:
+
+    http:
+      use_x_forwarded_for: true
+      trusted_proxies:
+        - 10.42.0.0/16
+        - 10.43.0.0/16
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: home-assistant
+  namespace: server
+  labels:
+    app.kubernetes.io/name: home-assistant
+    app.kubernetes.io/component: app
+    app.kubernetes.io/part-of: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: home-assistant
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: home-assistant
+        app.kubernetes.io/component: app
+        app.kubernetes.io/part-of: server
+    spec:
+      nodeSelector:
+        server.d-f.dev/node-role: pi
+      tolerations:
+        - key: server.d-f.dev/node-role
+          operator: Equal
+          value: pi
+          effect: NoSchedule
+      initContainers:
+        - name: init-config
+          image: busybox:1.37.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              [ -f /config/configuration.yaml ] || cp /bootstrap/configuration.yaml /config/configuration.yaml
+          volumeMounts:
+            - name: data
+              mountPath: /config
+            - name: bootstrap
+              mountPath: /bootstrap
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+      containers:
+        - name: home-assistant
+          image: homeassistant/home-assistant:2026.4
+          ports:
+            - containerPort: 8123
+          env:
+            - name: TZ
+              value: Europe/Berlin
+          volumeMounts:
+            - name: data
+              mountPath: /config
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8123
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8123
+            initialDelaySeconds: 120
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: home-assistant-data
+        - name: bootstrap
+          configMap:
+            name: home-assistant-bootstrap
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: home-assistant
+  namespace: server
+  labels:
+    app.kubernetes.io/name: home-assistant
+    app.kubernetes.io/component: service
+    app.kubernetes.io/part-of: server
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: home-assistant
+  ports:
+    - port: 8123
+      targetPort: 8123
