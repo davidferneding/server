@@ -546,6 +546,10 @@ data:
           },
           "fieldConfig": {
             "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "fieldMinMax": false,
               "mappings": [],
               "thresholds": {
                 "mode": "absolute",
@@ -553,22 +557,45 @@ data:
                   {
                     "color": "green",
                     "value": 0
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 3
-                  },
-                  {
-                    "color": "red",
-                    "value": 10
                   }
                 ]
               }
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": "/.*? -[0-9]+?/"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": "/.*? [0-9]+?/"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "blue",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
-            "h": 4,
+            "h": 13,
             "w": 24,
             "x": 0,
             "y": 16
@@ -584,24 +611,173 @@ data:
               "calcs": [
                 "lastNotNull"
               ],
-              "fields": "",
-              "values": false
+              "fields": "/.*/",
+              "values": true
             },
             "showPercentChange": false,
-            "textMode": "auto",
+            "textMode": "value_and_name",
             "wideLayout": true
           },
           "pluginVersion": "12.4.2",
           "targets": [
             {
               "editorMode": "code",
-              "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"server\"}) by (pod)",
-              "legendFormat": "{{pod}}",
-              "range": true,
+              "exemplar": false,
+              "expr": "label_replace(sum by(pod) (kube_pod_container_status_running{namespace=\"server\"}), \"service\", \"$1\", \"pod\", \"([a-z]+(-[a-z]+)*)-[a-z0-9-]+\")",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "{{service}}",
+              "range": false,
               "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "kube_deployment_spec_replicas{namespace=\"server\"}",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "{{deployment}}",
+              "range": false,
+              "refId": "B"
             }
           ],
-          "title": "Pod Restarts",
+          "title": "Deployment Status",
+          "transformations": [
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "byVariable": false,
+                "include": {
+                  "names": [
+                    "deployment",
+                    "Value #B",
+                    "service",
+                    "Value #A"
+                  ]
+                }
+              }
+            },
+            {
+              "filter": {
+                "id": "byRefId",
+                "options": "/^(?:B)$/"
+              },
+              "id": "organize",
+              "options": {
+                "excludeByName": {},
+                "includeByName": {},
+                "indexByName": {},
+                "renameByName": {
+                  "Value #B": "spec",
+                  "deployment": "service"
+                }
+              },
+              "topic": "series"
+            },
+            {
+              "filter": {
+                "id": "byRefId",
+                "options": "/^(?:A)$/"
+              },
+              "id": "organize",
+              "options": {
+                "excludeByName": {},
+                "includeByName": {},
+                "indexByName": {},
+                "renameByName": {
+                  "Value #A": "running"
+                }
+              },
+              "topic": "series"
+            },
+            {
+              "id": "joinByField",
+              "options": {
+                "byField": "service",
+                "mode": "outerTabular"
+              }
+            },
+            {
+              "id": "calculateField",
+              "options": {
+                "cumulative": {
+                  "field": "running",
+                  "reducer": "sum"
+                },
+                "mode": "reduceRow",
+                "reduce": {
+                  "include": [
+                    "running",
+                    "spec"
+                  ],
+                  "reducer": "diff"
+                },
+                "replaceFields": false,
+                "window": {
+                  "field": "running",
+                  "reducer": "mean",
+                  "windowAlignment": "trailing",
+                  "windowSize": 0.1,
+                  "windowSizeMode": "percentage"
+                }
+              }
+            },
+            {
+              "id": "calculateField",
+              "options": {
+                "alias": "Difference",
+                "binary": {
+                  "left": {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Difference"
+                    }
+                  },
+                  "operator": "*",
+                  "right": {
+                    "fixed": "-1"
+                  }
+                },
+                "mode": "binary",
+                "reduce": {
+                  "reducer": "sum"
+                },
+                "replaceFields": false
+              }
+            },
+            {
+              "id": "rowsToFields",
+              "options": {
+                "mappings": [
+                  {
+                    "fieldName": "service",
+                    "handlerKey": "field.name"
+                  },
+                  {
+                    "fieldName": "running",
+                    "handlerKey": "field.value"
+                  },
+                  {
+                    "fieldName": "Difference",
+                    "handlerArguments": {
+                      "threshold": {
+                        "color": "#F2495C"
+                      }
+                    },
+                    "handlerKey": "field.label"
+                  },
+                  {
+                    "fieldName": "spec",
+                    "handlerKey": "__ignore"
+                  }
+                ]
+              }
+            }
+          ],
           "type": "stat"
         }
       ],
@@ -622,7 +798,7 @@ data:
       "timezone": "browser",
       "title": "Home Server Overview",
       "uid": "home-server-overview",
-      "version": 1,
+      "version": 2,
       "weekStart": ""
     }
 ---
