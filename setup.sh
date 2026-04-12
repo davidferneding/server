@@ -92,12 +92,14 @@ kubectl apply -f infrastructure/crowdsec/crowdsec.yaml
 echo "Waiting for Traefik to be ready..."
 kubectl -n server wait --for=condition=ready pod -l app.kubernetes.io/name=traefik --timeout=120s
 
-# Step 6: Deploy Authentik (identity provider)
+# Step 6: Deploy Authentik and Headscale
 echo ""
-echo "Step 6: Deploying Authentik..."
+echo "Step 6: Deploying Authentik and Headscale..."
 kubectl apply -f infrastructure/authentik/authentik.yaml
 kubectl apply -f infrastructure/authentik/middleware.yaml
 kubectl apply -f infrastructure/authentik/ingressroute.yaml
+kubectl apply -f infrastructure/headscale/headscale.yaml
+kubectl apply -f infrastructure/headscale/ingressroute.yaml
 
 echo "Waiting for Authentik to be ready..."
 kubectl -n server wait --for=condition=ready pod -l app.kubernetes.io/name=authentik,app.kubernetes.io/component=server --timeout=180s

@@ -100,6 +100,9 @@ managed by Traefik as the ingress controller with CrowdSec for security.
 │   │   ├── middleware.yaml                # Traefik forward-auth middleware
 │   │   ├── ingressroute.yaml              # auth.d-f.dev
 │   │   └── secret.example.yaml
+│   ├── headscale/
+│   │   ├── headscale.yaml                 # Deployment + Service + PVC + ConfigMap
+│   │   └── ingressroute.yaml              # headscale.d-f.dev
 │   ├── prometheus/
 │   │   ├── prometheus.yaml                # Deployment + Service + RBAC + ConfigMap
 │   │   └── node-exporter.yaml             # DaemonSet for host metrics
@@ -127,7 +130,7 @@ managed by Traefik as the ingress controller with CrowdSec for security.
 └── policies/
     ├── default-deny.yaml                  # Deny all ingress by default
     ├── databases.yaml                     # PostgreSQL, MariaDB, Redis access
-    ├── infrastructure.yaml                # Traefik, CrowdSec, Authentik access
+    ├── infrastructure.yaml                # Traefik, CrowdSec, Authentik, Headscale access
     ├── apps.yaml                          # App service access
     └── monitoring.yaml                    # Prometheus, Grafana, Node Exporter access
 ```
@@ -143,6 +146,7 @@ managed by Traefik as the ingress controller with CrowdSec for security.
 | `status.d-f.dev` | uptime-kuma | 3001 (redirects `/` → `/status/`) |
 | `plants.d-f.dev` | plant-it | 3000 (frontend), 8080 (API) |
 | `auth.d-f.dev` | authentik | 9000 |
+| `headscale.d-f.dev` | headscale | 8080 |
 | `grafana.d-f.dev` | grafana | 3000 |
 | `d-f.dev` | noop (shorty) | — (URL shortener middleware) |
 
@@ -156,7 +160,7 @@ All ingress traffic is denied by default. Each service has explicit policies:
 ```
 Internet → Traefik (:443)
   Traefik → apps (paperless, vaultwarden, mealie, uptime-kuma, plant-it)
-  Traefik → infrastructure (authentik, grafana, crowdsec)
+  Traefik → infrastructure (authentik, headscale, grafana, crowdsec)
 
 Paperless → PostgreSQL, Redis, Gotenberg, Tika
 Mealie → PostgreSQL
@@ -259,6 +263,75 @@ chmod +x setup.sh
 kubectl -n server get pods
 flux get all
 ```
+
+## Dedicated Pi Worker Node
+
+To keep the Raspberry Pi reserved for Pi-only workloads, use `pi_agent_quickstart.sh`. It now installs Tailscale, joins the Pi to the self-hosted Headscale control plane, writes `/etc/rancher/k3s/config.yaml` with the Pi label and taint, installs the k3s agent, and enables both `tailscaled` and `k3s-agent` so the Pi reconnects automatically on boot.
+
+### 1. Create a Headscale user and reusable auth key
+
+Run these from a machine that already has `kubectl` access to the cluster:
+
+```bash
+kubectl -n server exec deploy/headscale -- headscale users create home
+kubectl -n server exec deploy/headscale -- headscale preauthkeys create --user home --reusable --expiration 24h
+```
+
+Save the generated auth key. You will use it for both the hosted server and the Pi.
+
+### 2. Join the hosted server to Headscale
+
+Install Tailscale on the hosted server, connect it to `headscale.d-f.dev`, and note its Tailscale IP:
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo systemctl enable --now tailscaled
+sudo tailscale up --login-server=https://headscale.d-f.dev --authkey <preauth-key>
+sudo tailscale ip -4
+```
+
+### 3. Add the hosted server's Tailscale address to k3s
+
+Merge the hosted server's Tailscale IP or DNS name into the existing k3s server config so the API certificate is valid over Tailscale too:
+
+```yaml
+# /etc/rancher/k3s/config.yaml on the hosted server
+tls-san:
+  - d-f.dev
+  - <server-tailscale-ip-or-dns>
+```
+
+Then restart k3s:
+
+```bash
+sudo systemctl restart k3s
+```
+
+### 4. Join the Pi
+
+Get the cluster token from the existing k3s server node:
+
+```bash
+cat /var/lib/rancher/k3s/server/node-token
+```
+
+Then run the quickstart script on the Pi as root. It will prompt for the Headscale auth key, the hosted server's Tailscale IP or DNS name, and the k3s token:
+
+```bash
+sudo ./pi_agent_quickstart.sh
+```
+
+The script hardcodes these cluster-specific settings:
+
+```yaml
+login-server: https://headscale.d-f.dev
+node-label:
+  - server.d-f.dev/node-role=pi
+node-taint:
+  - server.d-f.dev/node-role=pi:NoSchedule
+```
+
+Normal workloads will avoid the Pi automatically because of the taint. Pi-only workloads should add both a selector and a matching toleration, as shown in `apps/pi-demo/pi-demo.yaml`.
 
 ## Operations
 

@@ -159,3 +159,26 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: traefik
+---
+# Pi demo: allow from Traefik
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-pi-demo
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: pi-demo
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 8080
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
