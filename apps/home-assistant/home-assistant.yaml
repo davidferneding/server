@@ -32,6 +32,7 @@ data:
       trusted_proxies:
         - 10.42.0.0/16
         - 10.43.0.0/16
+        - 100.64.0.1
 ---
 apiVersion: apps/v1
 kind: Deployment
