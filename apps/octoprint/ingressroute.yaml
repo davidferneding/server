@@ -19,7 +19,5 @@ spec:
       middlewares:
         - name: crowdsec
           namespace: server
-        - name: authentik-auth
-          namespace: server
   tls:
     certResolver: letsencrypt
