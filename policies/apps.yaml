@@ -183,3 +183,26 @@ spec:
             matchLabels:
               app.kubernetes.io/name: traefik
 ---
+# OctoPrint: allow from Traefik
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-octoprint
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: octoprint
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 80
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+---

@@ -58,6 +58,8 @@ resources:
   - apps/plant-it/ingressroute.yaml
   - apps/home-assistant/home-assistant.yaml
   - apps/home-assistant/ingressroute.yaml
+  - apps/octoprint/octoprint.yaml
+  - apps/octoprint/ingressroute.yaml
 
   # Backup
   - backup/secret.yaml
