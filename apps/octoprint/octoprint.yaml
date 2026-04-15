@@ -94,7 +94,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: octoprint
+  name: octo-print
   namespace: server
   labels:
     app.kubernetes.io/name: octoprint

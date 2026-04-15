@@ -14,7 +14,7 @@ spec:
     - match: "Host(`octoprint.d-f.dev`)"
       kind: Rule
       services:
-        - name: octoprint
+        - name: octo-print
           port: 80
       middlewares:
         - name: crowdsec
