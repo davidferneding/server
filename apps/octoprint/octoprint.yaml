@@ -37,6 +37,7 @@ spec:
         app.kubernetes.io/component: app
         app.kubernetes.io/part-of: server
     spec:
+      enableServiceLinks: false
       securityContext:
         fsGroup: 1000
         supplementalGroups:
