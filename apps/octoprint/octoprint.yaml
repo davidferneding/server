@@ -53,7 +53,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: octoprint
-          image: octoprint/octoprint:1.11.7
+          image: octoprint/octoprint:1.11.8
           ports:
             - containerPort: 5000
           env:
