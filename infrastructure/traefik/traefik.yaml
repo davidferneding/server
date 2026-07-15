@@ -52,7 +52,7 @@ spec:
       serviceAccountName: traefik
       containers:
         - name: traefik
-          image: traefik:v3.7.6
+          image: traefik:v3.7.8
           args: ["--configfile=/etc/traefik/traefik.yaml"]
           ports:
             - containerPort: 443
