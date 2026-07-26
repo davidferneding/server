@@ -73,6 +73,7 @@ metadata:
     app.kubernetes.io/part-of: server
 data:
   PAPERLESS_REDIS: "redis://redis:6379"
+  PAPERLESS_DBENGINE: "postgresql"
   PAPERLESS_DBHOST: "postgresql"
   PAPERLESS_DBNAME: "paperless"
   PAPERLESS_DBUSER: "paperless"
