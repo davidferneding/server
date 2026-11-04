@@ -60,6 +60,7 @@ resources:
   - apps/home-assistant/ingressroute.yaml
   - apps/octoprint/octoprint.yaml
   - apps/octoprint/ingressroute.yaml
+  - apps/matter/matter.yaml
   - apps/affine/secret.yaml
   - apps/affine/affine.yaml
   - apps/affine/ingressroute.yaml

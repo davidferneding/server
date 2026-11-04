@@ -112,6 +112,9 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /config
+            - name: dbus
+              mountPath: /run/dbus
+              readOnly: true
           resources:
             requests:
               cpu: 250m
@@ -138,6 +141,10 @@ spec:
         - name: bootstrap
           configMap:
             name: home-assistant-bootstrap
+        - name: dbus
+          hostPath:
+            path: /run/dbus
+            type: Directory
 ---
 apiVersion: v1
 kind: Service
