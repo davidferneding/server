@@ -1,4 +1,4 @@
-# PostgreSQL: allow from paperless, mealie, authentik, backup, postgres-exporter scrape
+# PostgreSQL: allow from paperless, mealie, authentik, affine, backup, postgres-exporter scrape
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -26,6 +26,9 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: authentik
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: affine
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: backup
@@ -97,6 +100,9 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: authentik
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: affine
     - ports:
         - port: 9121
       from:

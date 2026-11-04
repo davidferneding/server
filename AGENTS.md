@@ -105,6 +105,7 @@ Every container has both `readinessProbe` and `livenessProbe`. Databases use `ex
 - `paperless` — owned by user `paperless`
 - `mealie` — owned by user `mealie`
 - `authentik` — owned by user `authentik`
+- `affine` — owned by user `affine` (AFFiNE at `notes.d-f.dev`, uses Redis DB 5 through 9)
 
 All three databases and users are created by the init script in `infrastructure/postgresql/postgresql.yaml` (ConfigMap `postgresql-init`). To add another database, add a block to that init script **and** add the password to `postgresql-secret`.
 

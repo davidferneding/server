@@ -39,6 +39,7 @@ data:
     PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump -h postgresql -U postgres -d paperless > "${BACKUP_DIR}/paperless.sql"
     PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump -h postgresql -U postgres -d mealie > "${BACKUP_DIR}/mealie.sql"
     PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump -h postgresql -U postgres -d authentik > "${BACKUP_DIR}/authentik.sql"
+    PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump -h postgresql -U postgres -d affine > "${BACKUP_DIR}/affine.sql"
     PGPASSWORD="${POSTGRES_PASSWORD}" pg_dumpall -h postgresql -U postgres > "${BACKUP_DIR}/postgres-all.sql"
 
     # Dump MariaDB databases
@@ -53,6 +54,8 @@ data:
     cp -r /data/plant-it "${BACKUP_DIR}/plant-it" 2>/dev/null || true
     cp -r /data/mealie "${BACKUP_DIR}/mealie" 2>/dev/null || true
     cp -r /data/paperless "${BACKUP_DIR}/paperless" 2>/dev/null || true
+    cp -r /data/affine/storage "${BACKUP_DIR}/affine-storage" 2>/dev/null || true
+    cp -r /data/affine/config "${BACKUP_DIR}/affine-config" 2>/dev/null || true
 
     # Copy infrastructure data
     echo "Copying infrastructure data..."
@@ -194,6 +197,12 @@ spec:
                 - name: redis-data
                   mountPath: /data/redis
                   readOnly: true
+                - name: affine-storage
+                  mountPath: /data/affine/storage
+                  readOnly: true
+                - name: affine-config
+                  mountPath: /data/affine/config
+                  readOnly: true
           restartPolicy: OnFailure
           volumes:
             - name: scripts
@@ -250,3 +259,9 @@ spec:
             - name: redis-data
               persistentVolumeClaim:
                 claimName: redis-data
+            - name: affine-storage
+              persistentVolumeClaim:
+                claimName: affine-storage
+            - name: affine-config
+              persistentVolumeClaim:
+                claimName: affine-config

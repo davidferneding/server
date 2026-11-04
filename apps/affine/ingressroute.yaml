@@ -1,0 +1,23 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: affine
+  namespace: server
+  labels:
+    app.kubernetes.io/name: affine
+    app.kubernetes.io/component: ingress
+    app.kubernetes.io/part-of: server
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: "Host(`notes.d-f.dev`)"
+      kind: Rule
+      services:
+        - name: affine
+          port: 3010
+      middlewares:
+        - name: crowdsec
+          namespace: server
+  tls:
+    certResolver: letsencrypt

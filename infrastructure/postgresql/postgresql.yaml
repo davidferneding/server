@@ -29,6 +29,12 @@ data:
       GRANT ALL PRIVILEGES ON DATABASE authentik TO authentik;
       \c authentik
       GRANT ALL ON SCHEMA public TO authentik;
+
+      CREATE USER affine WITH ENCRYPTED PASSWORD '${AFFINE_DB_PASSWORD}';
+      CREATE DATABASE affine OWNER affine;
+      GRANT ALL PRIVILEGES ON DATABASE affine TO affine;
+      \c affine
+      GRANT ALL ON SCHEMA public TO affine;
     EOSQL
 ---
 apiVersion: apps/v1
@@ -127,6 +133,11 @@ spec:
                 secretKeyRef:
                   name: postgresql-secret
                   key: AUTHENTIK_DB_PASSWORD
+            - name: AFFINE_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: AFFINE_DB_PASSWORD
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
