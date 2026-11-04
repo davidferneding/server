@@ -103,7 +103,7 @@ spec:
               memory: 64Mi
       containers:
         - name: home-assistant
-          image: homeassistant/home-assistant:2026.10
+          image: homeassistant/home-assistant:2026.11
           ports:
             - containerPort: 8123
           env:
