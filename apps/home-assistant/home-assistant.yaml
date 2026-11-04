@@ -79,6 +79,27 @@ spec:
             limits:
               cpu: 50m
               memory: 32Mi
+        - name: install-localtuya
+          image: busybox:1.38.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              rm -rf /tmp/localtuya-src /config/custom_components/localtuya
+              mkdir -p /tmp/localtuya-src /config/custom_components
+              wget -qO- https://github.com/rospogrigio/localtuya/archive/refs/tags/v5.2.5.tar.gz | tar -xz -C /tmp/localtuya-src
+              cp -r /tmp/localtuya-src/localtuya-*/custom_components/localtuya /config/custom_components/
+          volumeMounts:
+            - name: data
+              mountPath: /config
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi
       containers:
         - name: home-assistant
           image: homeassistant/home-assistant:2026.10
