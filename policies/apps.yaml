@@ -229,3 +229,26 @@ spec:
             matchLabels:
               app.kubernetes.io/name: traefik
 ---
+# Manticore search (AFFiNE indexer): allow from AFFiNE
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-manticore
+  namespace: server
+  labels:
+    app.kubernetes.io/component: policy
+    app.kubernetes.io/part-of: server
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: manticore
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - port: 9308
+      from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: affine
+---

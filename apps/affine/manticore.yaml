@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: affine-manticore
+  namespace: server
+  labels:
+    app.kubernetes.io/name: manticore
+    app.kubernetes.io/component: storage
+    app.kubernetes.io/part-of: server
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: manticore
+  namespace: server
+  labels:
+    app.kubernetes.io/name: manticore
+    app.kubernetes.io/component: search
+    app.kubernetes.io/part-of: server
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: manticore
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: manticore
+        app.kubernetes.io/component: search
+        app.kubernetes.io/part-of: server
+    spec:
+      containers:
+        - name: manticore
+          image: manticoresearch/manticore:10.1.0
+          ports:
+            - containerPort: 9308
+          volumeMounts:
+            - name: manticore-data
+              mountPath: /var/lib/manticore
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9308
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9308
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: manticore-data
+          persistentVolumeClaim:
+            claimName: affine-manticore
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: manticore
+  namespace: server
+  labels:
+    app.kubernetes.io/name: manticore
+    app.kubernetes.io/component: service
+    app.kubernetes.io/part-of: server
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: manticore
+  ports:
+    - port: 9308
+      targetPort: 9308

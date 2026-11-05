@@ -63,6 +63,7 @@ resources:
   - apps/matter/matter.yaml
   - apps/affine/secret.yaml
   - apps/affine/affine.yaml
+  - apps/affine/manticore.yaml
   - apps/affine/ingressroute.yaml
 
   # Backup
