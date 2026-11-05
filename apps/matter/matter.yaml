@@ -51,6 +51,8 @@ spec:
       containers:
         - name: matter
           image: ghcr.io/matter-js/matterjs-server:1.5.5
+          securityContext:
+            runAsUser: 0
           ports:
             - containerPort: 5580
           env:
