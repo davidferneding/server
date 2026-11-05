@@ -39,7 +39,7 @@ spec:
     spec:
       containers:
         - name: manticore
-          image: manticoresearch/manticore:10.1.0
+          image: manticoresearch/manticore:29.9.0
           ports:
             - containerPort: 9308
           volumeMounts:
