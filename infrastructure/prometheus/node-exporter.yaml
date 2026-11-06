@@ -20,6 +20,15 @@ spec:
     spec:
       hostPID: true
       hostNetwork: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: server.d-f.dev/node-role
+                    operator: NotIn
+                    values:
+                      - pi
       containers:
         - name: node-exporter
           image: prom/node-exporter:v1.12.1
