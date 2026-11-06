@@ -66,9 +66,16 @@ spec:
               value: enp1s0
             - name: NODE_OPTIONS
               value: "--max-old-space-size=768"
+            - name: NOBLE_BINDINGS
+              value: dbus
+            - name: BLUETOOTH_ADAPTER
+              value: "0"
           volumeMounts:
             - name: matter-data
               mountPath: /data
+            - name: dbus
+              mountPath: /run/dbus
+              readOnly: true
           resources:
             requests:
               cpu: 100m
@@ -92,6 +99,10 @@ spec:
         - name: matter-data
           persistentVolumeClaim:
             claimName: matter-data
+        - name: dbus
+          hostPath:
+            path: /run/dbus
+            type: Directory
 ---
 apiVersion: v1
 kind: Service
