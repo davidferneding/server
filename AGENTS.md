@@ -161,13 +161,11 @@ Metrics exposed on `:8082` (not `:8080`) — the metrics entrypoint is named `me
 1. Static targets: `node-exporter:9100`, `traefik:8082`
 2. Pod annotation discovery (namespace `server` only): pods with `prometheus.io/scrape: "true"` + `prometheus.io/port: "<port>"` are auto-scraped
 
-Retention: 90 days for both Prometheus and Loki.
+Retention: 90 days for Prometheus.
 
 **Node-exporter** runs as a DaemonSet with `hostPID: true` and `hostNetwork: true` — it uses `hostPort: 9100` and mounts the host's root filesystem. This is intentional for host-level metrics.
 
 **Grafana** (`grafana.d-f.dev`) has a pre-provisioned dashboard (`home-server-overview`) via ConfigMap. The Prometheus datasource is also provisioned. Additional dashboards can be added to the `grafana-dashboards` ConfigMap.
-
-**Note:** Loki and Promtail are referenced in `setup.sh` and the README architecture diagram but their manifests (`infrastructure/loki/`) **do not exist in this repo**. They appear to be planned but not yet implemented.
 
 ---
 
@@ -177,7 +175,7 @@ CronJob runs daily at `0 4 * * *` (4 AM). Uses an ephemeral `alpine:3.23` contai
 
 Backup flow: `pg_dump` + `mariadb-dump` → tar.gz → GPG encrypt (AES256) → rclone upload → cleanup old backups.
 
-**Excluded from backup** intentionally: Loki (`loki-data`) and Prometheus (`prometheus-data`) — too large, regenerable.
+**Excluded from backup** intentionally: Prometheus (`prometheus-data`) — too large, regenerable.
 
 Backup destination is configured via `rclone.conf` in `backup-secret`. Currently Dropbox (`d-f-dev` remote, path `/d-f-dev/backups`). A Backblaze B2 config block is commented out in `backup/secret.example.yaml` as a ready alternative.
 
@@ -237,3 +235,10 @@ The init container only has `POSTGRES_USER`, `PGDATA`, and `POSTGRES_PASSWORD` �
 - **Redis has no password** — it's protected only by network policy, not authentication.
 - **The `shorty` middleware links are hardcoded in `middlewares.yaml`** — to add a short link, add to the `spec.plugin.shorty.links` map and commit.
 - **CrowdSec AppSec is disabled** (`crowdsecAppsecEnabled: false`) in the middleware config, even though the AppSec port (7422) is listed in the CrowdSec Service and the CrowdSec container loads AppSec collections.
+- **Node placement**: Home Assistant and Matter run on `meleq4c` (label `server.d-f.dev/node-role: home`) with host networking, since they need the LAN and host Bluetooth. OctoPrint is pinned to the Pi (`node-role: pi`) and is scaled to 0 while the Pi is unreliable. The node-exporter DaemonSet excludes the Pi.
+- **Single-writer volumes use `strategy: Recreate`**: Prometheus, AFFiNE, Home Assistant and Matter mount ReadWriteOnce volumes. A RollingUpdate starts the new pod while the old one still holds the data lock (Prometheus fails with `lock DB directory`).
+- **Flux waits for health (`wait: true`, 5m timeout)**: one Pending or crash-looping workload blocks reconciliation for every resource. Scale it to 0 in Git until it's fixed.
+- **Node containerd has AppArmor disabled**: `disable_apparmor = true` is set in a copied `config-v3.toml.tmpl` on both `df-1blu` and `meleq4c`. Without it, Postgres, MariaDB and D-Bus clients break on the current Ubuntu kernel. Compare the template with the regenerated `config.toml` after each k3s upgrade.
+- **Bluetooth**: Matter (`NOBLE_BINDINGS=dbus`) and Home Assistant mount the host `/run/dbus`. Home Assistant also needs `NET_ADMIN` and `NET_RAW`.
+- **AFFiNE indexer**: enabled in `config.json` (`affine-server-config`) and backed by the `manticore` service, pinned to 10.1.0. Renovate ignores that image on purpose, because AFFiNE is only tested against that version.
+- **Agent tunnel**: the k3s server sets `advertise-address: 100.64.0.1`, so agents reach the API server over Tailscale. Without it, the kubelet proxy for `meleq4c` returns 502.

@@ -79,28 +79,6 @@ spec:
             limits:
               cpu: 50m
               memory: 32Mi
-        - name: install-hacs
-          image: busybox:1.38.0
-          command:
-            - /bin/sh
-            - -c
-            - |
-              set -e
-              rm -rf /config/custom_components/localtuya
-              [ -f /config/custom_components/hacs/manifest.json ] && exit 0
-              mkdir -p /config/custom_components/hacs
-              wget -qO /tmp/hacs.zip https://github.com/hacs/integration/releases/download/2.0.5/hacs.zip
-              unzip -o -q /tmp/hacs.zip -d /config/custom_components/hacs
-          volumeMounts:
-            - name: data
-              mountPath: /config
-          resources:
-            requests:
-              cpu: 10m
-              memory: 16Mi
-            limits:
-              cpu: 200m
-              memory: 64Mi
       containers:
         - name: home-assistant
           image: homeassistant/home-assistant:2026.11

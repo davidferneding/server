@@ -61,6 +61,7 @@ for secret_file in \
   apps/paperless/secret.yaml \
   apps/mealie/secret.yaml \
   apps/plant-it/secret.yaml \
+  apps/affine/secret.yaml \
   infrastructure/authentik/secret.yaml \
   infrastructure/grafana/secret.yaml \
   backup/secret.yaml; do
@@ -106,17 +107,14 @@ kubectl -n server wait --for=condition=ready pod -l app.kubernetes.io/name=authe
 
 # Step 7: Deploy monitoring and logging
 echo ""
-echo "Step 7: Deploying monitoring and logging..."
+echo "Step 7: Deploying monitoring..."
 kubectl apply -f infrastructure/prometheus/prometheus.yaml
 kubectl apply -f infrastructure/prometheus/node-exporter.yaml
-kubectl apply -f infrastructure/loki/loki.yaml
-kubectl apply -f infrastructure/loki/promtail.yaml
 kubectl apply -f infrastructure/grafana/grafana.yaml
 kubectl apply -f infrastructure/grafana/ingressroute.yaml
 
 echo "Waiting for monitoring to be ready..."
 kubectl -n server wait --for=condition=ready pod -l app.kubernetes.io/name=prometheus --timeout=120s
-kubectl -n server wait --for=condition=ready pod -l app.kubernetes.io/name=loki --timeout=120s
 kubectl -n server wait --for=condition=ready pod -l app.kubernetes.io/name=grafana --timeout=60s
 
 # Step 8: Deploy applications
@@ -136,6 +134,12 @@ kubectl apply -f apps/plant-it/plant-it.yaml
 kubectl apply -f apps/plant-it/ingressroute.yaml
 kubectl apply -f apps/home-assistant/home-assistant.yaml
 kubectl apply -f apps/home-assistant/ingressroute.yaml
+kubectl apply -f apps/matter/matter.yaml
+kubectl apply -f apps/octoprint/octoprint.yaml
+kubectl apply -f apps/octoprint/ingressroute.yaml
+kubectl apply -f apps/affine/affine.yaml
+kubectl apply -f apps/affine/manticore.yaml
+kubectl apply -f apps/affine/ingressroute.yaml
 
 # Step 9: Deploy backup
 echo ""
