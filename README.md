@@ -268,7 +268,7 @@ flux get all
 
 ## Dedicated Pi Worker Node
 
-To keep the Raspberry Pi reserved for Pi-only workloads, use `pi_agent_quickstart.sh`. It now installs Tailscale, joins the Pi to the self-hosted Headscale control plane, writes `/etc/rancher/k3s/config.yaml` with the Pi label and taint, installs the k3s agent, and enables both `tailscaled` and `k3s-agent` so the Pi reconnects automatically on boot.
+To set up a node (Raspberry Pi OS or Ubuntu Server) as a k3s agent, use `setup-node.sh`. It installs Tailscale, joins the Headscale control plane, writes `/etc/rancher/k3s/config.yaml` with the role label and taint, installs the k3s agent, and enables `tailscaled` and `k3s-agent` so the node reconnects on boot. It reboots and resumes itself when a Pi needs memory cgroups enabled.
 
 ### 1. Create a Headscale user and reusable auth key
 
@@ -318,11 +318,13 @@ Get the cluster token from the existing k3s server node:
 cat /var/lib/rancher/k3s/server/node-token
 ```
 
-Then run the quickstart script on the Pi as root. It will prompt for the Headscale auth key, the hosted server's Tailscale IP or DNS name, and the k3s token:
+Then run the setup script on the node as root. Pass the node role (`pi` or `home`), the k3s token and a Headscale auth key. Missing values are prompted for when you run it interactively:
 
 ```bash
-sudo ./pi_agent_quickstart.sh
+sudo NODE_ROLE=pi K3S_TOKEN=<token> HEADSCALE_AUTH_KEY=<key> ./setup-node.sh
 ```
+
+By default the agent connects to the k3s server at `100.64.0.1` (its Tailscale address). Override it with `K3S_SERVER=<address>` if needed.
 
 If the script reports that it enabled memory cgroups in `/boot/firmware/cmdline.txt` or `/boot/cmdline.txt`, reboot the Pi once and run the script again. That Raspberry Pi OS kernel setting is required before `k3s-agent` can start.
 
@@ -341,7 +343,7 @@ node-taint:
   - server.d-f.dev/node-role=pi:NoSchedule
 ```
 
-If `kubectl logs`, `kubectl exec`, or ingress traffic to Pi-hosted apps fails, rerun `sudo ./pi_agent_quickstart.sh` on the Pi or update `/etc/rancher/k3s/config.yaml` there so `node-ip`, `node-external-ip`, and `kubelet-arg: node-ip=...` all use the detected Tailscale IPv4, then restart `k3s-agent`. From the hosted server, verify kubelet reachability with `curl -sk https://<pi-tailscale-ip>:10250/healthz`.
+If `kubectl logs`, `kubectl exec`, or ingress traffic to Pi-hosted apps fails, rerun `sudo NODE_ROLE=pi K3S_TOKEN=<token> ./setup-node.sh` on the Pi or update `/etc/rancher/k3s/config.yaml` there so `node-ip`, `node-external-ip`, and `kubelet-arg: node-ip=...` all use the detected Tailscale IPv4, then restart `k3s-agent`. From the hosted server, verify kubelet reachability with `curl -sk https://<pi-tailscale-ip>:10250/healthz`.
 
 Normal workloads will avoid the Pi automatically because of the taint. Pi-only workloads should add both a selector and a matching toleration, as shown in `apps/pi-health/pi-health.yaml`.
 
