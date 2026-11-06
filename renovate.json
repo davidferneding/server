@@ -43,6 +43,11 @@
       ]
     },
     {
+      "description": "Manticore is pinned to the version AFFiNE is tested against",
+      "matchPackageNames": ["manticoresearch/manticore"],
+      "enabled": false
+    },
+    {
       "description": "Pin digest for critical services",
       "matchPackageNames": ["vaultwarden/server"],
       "automerge": false
