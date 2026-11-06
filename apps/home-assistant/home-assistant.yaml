@@ -104,6 +104,11 @@ spec:
       containers:
         - name: home-assistant
           image: homeassistant/home-assistant:2026.11
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
           ports:
             - containerPort: 8123
           env:
