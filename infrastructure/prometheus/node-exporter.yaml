@@ -31,7 +31,7 @@ spec:
                       - pi
       containers:
         - name: node-exporter
-          image: prom/node-exporter:v1.12.1
+          image: prom/node-exporter:v1.13.1
           args:
             - "--path.rootfs=/host"
             - "--path.procfs=/host/proc"
