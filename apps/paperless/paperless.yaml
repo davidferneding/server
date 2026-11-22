@@ -150,12 +150,18 @@ spec:
             httpGet:
               path: /
               port: 8000
+              httpHeaders:
+                - name: Host
+                  value: paperless.d-f.dev
             initialDelaySeconds: 30
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /
               port: 8000
+              httpHeaders:
+                - name: Host
+                  value: paperless.d-f.dev
             initialDelaySeconds: 60
             periodSeconds: 30
       volumes:
